@@ -6,7 +6,7 @@
 
 ## TASK-001
 **Title:** Pipeline I/O Types
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-001
 **Milestone:** MVP: CLI Proof of Concept on TypeScript + Python
 **Departments:** [engineering]
@@ -230,7 +230,7 @@
 
 ## TASK-009
 **Title:** Fixture Validation Harness
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-005
 **Milestone:** MVP: CLI Proof of Concept on TypeScript + Python
 **Departments:** [engineering, qa]
@@ -376,7 +376,7 @@
 
 ## TASK-014
 **Title:** Blind Spot Catalog — JSON Schema + Initial Entries
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-009
 **Milestone:** MVP: CLI Proof of Concept on TypeScript + Python
 **Departments:** [engineering, qa]

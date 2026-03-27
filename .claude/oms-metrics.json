@@ -25,5 +25,59 @@
     "passed": true,
     "fail_at": null,
     "cost_usd": null
+  },
+  {
+    "task_id": "TASK-002",
+    "slug": "optinum",
+    "title": "ASTParser \u2014 TypeScript",
+    "date": "2026-03-27T06:51:51.622986Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
+  },
+  {
+    "task_id": "TASK-004",
+    "slug": "optinum",
+    "title": "SchemaDetector \u2014 TypeScript",
+    "date": "2026-03-27T06:52:12.777070Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
+  },
+  {
+    "task_id": "TASK-003",
+    "slug": "optinum",
+    "title": "ASTParser \u2014 Python",
+    "date": "2026-03-27T06:52:22.248069Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
+  },
+  {
+    "task_id": "TASK-005",
+    "slug": "optinum",
+    "title": "SchemaDetector \u2014 Python",
+    "date": "2026-03-27T06:52:48.699629Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
+  },
+  {
+    "task_id": "TASK-024",
+    "slug": "optinum",
+    "title": "optinum catalog add Command",
+    "date": "2026-03-27T06:53:00.297146Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
+  },
+  {
+    "task_id": "TASK-031",
+    "slug": "optinum",
+    "title": "Fixture Catalog Completeness Check",
+    "date": "2026-03-27T06:53:53.454217Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
   }
 ]
