@@ -7,11 +7,15 @@ An AI-native testing system that generates optimized, diff-scoped integration te
 Developers and teams using AI coding agents (Claude Code, Copilot, Devin, Cursor) who need confidence that AI-generated code doesn't break integration boundaries — without the cost of running a full test suite on every PR.
 
 ## Our Operating Belief
-Unit tests are low-value for AI-generated code. LLMs rarely make syntax errors; they make logic errors at integration boundaries. Standard integration tests are too slow and resource-heavy to run on every AI-generated diff. The right primitive is a diff-scoped integration test: synthesized from the blast radius of a change, not written by hand and not run globally.
+Unit tests are low-value for AI-generated code — not because unit tests are bad, but because AI writes both the code and the tests from the same assumptions. When the code has a blind spot, the unit test has the same blind spot. Both pass. The bug ships.
 
-**Live proof of the thesis:** Claude Code changed a questionnaire route's URL params. Unit tests passed on both sides (questionnaire: ✓, home: ✓). The contract between them — the URL params the home page passes to questionnaire — was never tested. E2E caught it at runtime. Optinum would have caught it at diff time by traversing the upward call graph and generating contract tests for every caller of the changed route. This is the exact class of bug Optinum exists to catch: correct-in-isolation, broken-in-integration, invisible-to-unit-tests.
+This is structural, not incidental. LLMs learn from happy-path training data. They generate code that handles the cases they were shown. They generate tests that verify the code handles those same cases. The test suite turns green. The integration boundary breaks in production.
 
-If we can make integration test generation as fast as a linter and as targeted as a code review, developers will adopt it as a default CI step — not a separate QA process.
+Optinum is the only observer outside that loop. It receives only the structural diff — blast radius, contracts, change type — and generates tests from an adversarially isolated context. It has no access to the developer's assumptions, the PR description, or the session that wrote the code. The independence is the mechanism of detection.
+
+**Live proof of the thesis:** Claude Code changed a questionnaire route's URL params. Unit tests passed on both sides (questionnaire: ✓, home: ✓). The contract between them — the URL params the home page passes to questionnaire — was never tested. E2E caught it at runtime. Optinum would have caught it at diff time by traversing the upward call graph and generating contract tests for every caller of the changed route. This is the exact class of bug Optinum exists to catch: correct-in-isolation, broken-in-integration, invisible-to-unit-tests, and invisible-to-AI-written-unit-tests.
+
+If we can make this as fast as a linter and as targeted as a code review, developers will adopt it as a default CI step — not a separate QA process.
 
 ## The Moat
 Two synthesis layers that no existing tool combines:

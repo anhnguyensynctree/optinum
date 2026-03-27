@@ -932,3 +932,35 @@ The core framing shift: Optinum is AI-native testing. Every catalog pattern must
 **Produces:** Catalog at ≥20 patterns with OSS evidence; Milestone 2 exit gate 2 closed; aiNative framing baked into every pattern
 
 **Verify:** `cat src/catalog/blind-spot-catalog.json | python3 -c "import json,sys; p=json.load(sys.stdin)['patterns']; print(len(p), 'patterns,', sum(1 for x in p if x.get('ossEvidence') and 'OSS-search' not in x['ossEvidence']), 'with real evidence')"` — must show ≥20 patterns and ≥18 with real evidence
+
+---
+
+## TASK-033
+**Title:** AI-vs-AI Evidence: Prove AI Unit Tests Miss AI Code Bugs
+**Status:** queued
+**Feature:** FEATURE-019
+**Milestone:** Validated & Shareable
+**Departments:** [engineering, qa]
+**Size:** medium
+**Gate:** no-gate
+**Depends-on:** [TASK-032]
+
+**Spec:** The system SHALL produce a documented evidence set (`docs/ai-unit-test-gap.md`) containing ≥5 real cases where AI-generated code + AI-generated unit tests both passed, but Optinum-style contract/edge-case tests would have caught the bug. Cases must be reproducible — either from public OSS commit history or from a synthetic replica that demonstrates the pattern.
+
+**Context:**
+The product claim is: when AI writes both code and tests, it misses the same blind spots in both. Unit tests pass. The bug ships. Optinum is the only observer outside that loop. This document is the empirical proof of that claim — the foundation of the product's positioning against "just use AI to write more tests."
+
+**Scenarios:**
+1. Given a case where AI code had a contract violation / When AI-generated unit tests are inspected / Then no test covers the contract boundary — the mock matches the broken assumption
+2. Given a case where AI code had a null/undefined path / When AI-generated tests are inspected / Then all test inputs are valid non-null values — the null path is never exercised
+3. Given a case where AI code had an error path / When AI-generated tests are inspected / Then all assertions are on success responses — the error branch has 0 test coverage
+4. Given each of the ≥5 cases / When the Optinum-style test is run against the code / Then it fails (proving the gap)
+5. Given the document / When a developer reads it / Then they understand in 2 minutes why AI unit tests are insufficient for AI-generated code
+
+**Artifacts:**
+- `docs/ai-unit-test-gap.md` — 5+ documented cases, each with: the AI code, the AI-written test, what the test misses, what Optinum generates instead, and the evidence source
+- `benchmark/ai-unit-test-gap/` — synthetic replicas for each case that can be run to prove the gap
+
+**Produces:** Empirical proof of core product thesis; shareable artifact for developer evangelism; foundation for blog post / demo
+
+**Verify:** Each case in `docs/ai-unit-test-gap.md` has a corresponding synthetic fixture in `benchmark/ai-unit-test-gap/` that reproduces the failure; document is under 400 lines; all 5 cases are distinct failure classes

@@ -1,5 +1,5 @@
 {
-  "version": "0.2.0",
+  "version": "0.3.0",
   "patterns": [
     {
       "id": "params-renamed",
@@ -293,6 +293,54 @@
       "severity": "medium",
       "aiNative": true,
       "aiNativeReason": "AI knows the intended type from context and asserts it confidently; it doesn't model the possibility that the runtime value diverges from the declared shape"
+    },
+    {
+      "id": "mocked-dependency-circular-test",
+      "name": "Unit Test Mocks the Same Assumption the Code Has",
+      "changeType": "contract-change",
+      "description": "AI writes a unit test that mocks a dependency to return the exact shape the code was written to expect. Both the code and the mock share the same incorrect assumption about the contract. The test passes. The real caller sends a different shape and gets a runtime error. Optinum generates a test against the real contract, not the mocked one.",
+      "testPattern": {
+        "assertType": "field-sent",
+        "description": "Verify real caller payload matches actual contract, not the mocked shape"
+      },
+      "ossEvidence": "OSS-search: GitHub issues where unit tests pass but integration fails on a field that was mocked in test — search 'mock returned wrong shape' OR 'test passed but production failed' in TypeScript/Jest repos",
+      "provisional": true,
+      "fixtureRef": null,
+      "severity": "high",
+      "aiNative": true,
+      "aiNativeReason": "AI generates both the code and the test in the same session with the same context. The mock reflects what the AI assumed the dependency returns — if that assumption is wrong, the test is a circular proof of nothing"
+    },
+    {
+      "id": "boundary-values-untested",
+      "name": "AI Test Suite Has No Boundary or Edge Case Assertions",
+      "changeType": "type-widening",
+      "description": "AI generates a test suite with high line coverage but only tests happy-path inputs — the exact values used in examples. Empty arrays, zero, null, empty string, max integer, duplicate keys: none appear. Optinum probes these boundaries by design because they are the inputs real users send and LLMs never generate tests for.",
+      "testPattern": {
+        "assertType": "field-sent",
+        "description": "Probe boundary values: empty, null, zero, max, duplicate"
+      },
+      "ossEvidence": "Reference: 'Why AI-Generated Tests Are Not Enough' — documented pattern across Copilot/ChatGPT test generation studies showing 90%+ happy-path bias in AI-written test suites. OSS-search: repos where AI generated tests but coverage drops to 0% on error paths.",
+      "provisional": true,
+      "fixtureRef": null,
+      "severity": "high",
+      "aiNative": true,
+      "aiNativeReason": "Training data contains far more success-path examples than failure-path examples. AI reproduces the distribution it was trained on — tests cover what the training data showed being tested"
+    },
+    {
+      "id": "error-path-untested-by-ai",
+      "name": "Error Path Exists in Code but Has No Test",
+      "changeType": "cascade-change",
+      "description": "AI writes a function with explicit error handling (try/catch, error return, 400/500 status branch) but writes no test for the error case. The error path is syntactically correct but functionally unverified — it may swallow errors, return wrong shape, or crash on a different input. Optinum generates a test that deliberately triggers the error path.",
+      "testPattern": {
+        "assertType": "status-code",
+        "description": "Trigger error path and verify error response shape and status code"
+      },
+      "ossEvidence": "OSS-search: PRs titled 'fix error handling' OR 'add error case test' across Node.js/Python API repos — these are post-hoc fixes for exactly this pattern after production failures",
+      "provisional": true,
+      "fixtureRef": null,
+      "severity": "high",
+      "aiNative": true,
+      "aiNativeReason": "AI writes error handling because it has seen the pattern. It does not write the test for it because the training data for test generation overwhelmingly shows success path tests. The error branch exists but is never exercised"
     }
   ]
 }
