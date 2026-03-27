@@ -817,7 +817,7 @@
 
 ## TASK-029
 **Title:** Three-Loop Self-Validation — Middle Loop (StrykerJS adversarial)
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-020
 **Milestone:** Validated & Shareable
 **Departments:** [engineering, qa]
