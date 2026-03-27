@@ -1,0 +1,234 @@
+{
+  "version": "0.1.0",
+  "patterns": [
+    {
+      "id": "params-renamed",
+      "name": "Renamed API Parameters",
+      "changeType": "contract-change",
+      "description": "AI renames request parameters in the route handler schema but callers in other files still send the old parameter names, causing validation failures at runtime.",
+      "testPattern": {
+        "assertType": "field-not-sent",
+        "description": "Verify caller does not send old parameter names",
+        "field": "oldParamName"
+      },
+      "ossEvidence": null,
+      "provisional": true,
+      "fixtureRef": "fixture-001-contract-change",
+      "severity": "high"
+    },
+    {
+      "id": "return-shape-changed",
+      "name": "Changed Response Shape",
+      "changeType": "contract-change",
+      "description": "AI restructures the API response object (e.g., wraps data in a nested key) but callers destructure the old shape, causing TypeError at runtime when accessing missing properties.",
+      "testPattern": {
+        "assertType": "field-sent",
+        "description": "Verify caller handles new response shape",
+        "field": "data"
+      },
+      "ossEvidence": null,
+      "provisional": true,
+      "fixtureRef": "fixture-002-return-shape-change",
+      "severity": "high"
+    },
+    {
+      "id": "required-field-added",
+      "name": "New Required Field Not Sent by Callers",
+      "changeType": "contract-change",
+      "description": "AI adds a new required field to the API schema but callers in the blast radius do not send this field, causing schema validation errors (e.g., Zod parse failure) on every call.",
+      "testPattern": {
+        "assertType": "field-sent",
+        "description": "Verify caller sends newly required field",
+        "field": "newRequiredField"
+      },
+      "ossEvidence": null,
+      "provisional": true,
+      "fixtureRef": null,
+      "severity": "critical"
+    },
+    {
+      "id": "field-removed",
+      "name": "Removed Field Still Sent by Callers",
+      "changeType": "contract-change",
+      "description": "AI removes a field from the API schema (strict validation mode) but callers still send it, causing validation failures or silent data loss depending on schema strictness.",
+      "testPattern": {
+        "assertType": "field-not-sent",
+        "description": "Verify caller no longer sends removed field"
+      },
+      "ossEvidence": null,
+      "provisional": true,
+      "fixtureRef": null,
+      "severity": "medium"
+    },
+    {
+      "id": "status-code-changed",
+      "name": "HTTP Status Code Changed",
+      "changeType": "contract-change",
+      "description": "AI changes the HTTP status code returned by an endpoint (e.g., 201→200) but callers check the old status code to determine success, causing silent logic failures.",
+      "testPattern": {
+        "assertType": "status-code",
+        "description": "Verify caller handles updated status code",
+        "value": 200
+      },
+      "ossEvidence": null,
+      "provisional": true,
+      "fixtureRef": "fixture-013-status-code-mismatch",
+      "severity": "medium"
+    },
+    {
+      "id": "idempotency-missing",
+      "name": "Idempotency Key Not Sent by Callers",
+      "changeType": "new-write-endpoint",
+      "description": "AI adds an idempotency key requirement to a payment or mutation endpoint schema but callers that trigger the endpoint do not generate or send the idempotency key, causing duplicate operations.",
+      "testPattern": {
+        "assertType": "field-sent",
+        "description": "Verify caller sends idempotency key",
+        "field": "idempotencyKey"
+      },
+      "ossEvidence": null,
+      "provisional": true,
+      "fixtureRef": "fixture-006-idempotency",
+      "severity": "critical"
+    },
+    {
+      "id": "auth-ownership-gap",
+      "name": "Auth Check Without Ownership Verification",
+      "changeType": "new-write-endpoint",
+      "description": "AI adds authentication check (user is logged in) to a new endpoint but omits ownership check (user owns the resource), enabling any authenticated user to access any other user's data (IDOR vulnerability).",
+      "testPattern": {
+        "assertType": "call-made",
+        "description": "Verify ownership check is performed after auth check"
+      },
+      "ossEvidence": null,
+      "provisional": true,
+      "fixtureRef": "fixture-004-auth-ownership",
+      "severity": "critical"
+    },
+    {
+      "id": "auth-check-missing",
+      "name": "New Endpoint Added Outside Auth Middleware",
+      "changeType": "new-write-endpoint",
+      "description": "AI adds a new route or endpoint file outside the authenticated router group, bypassing all authentication middleware. The endpoint is publicly accessible when it should be protected.",
+      "testPattern": {
+        "assertType": "call-made",
+        "description": "Verify auth middleware is applied to new endpoint"
+      },
+      "ossEvidence": null,
+      "provisional": true,
+      "fixtureRef": "fixture-003-missing-auth-check",
+      "severity": "critical"
+    },
+    {
+      "id": "input-trust-violation",
+      "name": "Sanitization at HTTP Boundary Bypassed by Internal Callers",
+      "changeType": "new-write-endpoint",
+      "description": "AI adds input sanitization at the HTTP handler level but internal callers (background jobs, service methods) call the underlying service function directly, bypassing sanitization entirely.",
+      "testPattern": {
+        "assertType": "call-made",
+        "description": "Verify all callers pass through sanitization layer"
+      },
+      "ossEvidence": null,
+      "provisional": true,
+      "fixtureRef": "fixture-005-input-trust",
+      "severity": "high"
+    },
+    {
+      "id": "transaction-missing",
+      "name": "Multi-Step Operation Without Database Transaction",
+      "changeType": "new-write-endpoint",
+      "description": "AI implements a multi-step write operation (debit + credit, create + update) as sequential database calls without wrapping in a transaction. Partial failures leave the database in an inconsistent state.",
+      "testPattern": {
+        "assertType": "call-made",
+        "description": "Verify atomic operation is wrapped in transaction"
+      },
+      "ossEvidence": null,
+      "provisional": true,
+      "fixtureRef": "fixture-011-transaction-missing",
+      "severity": "critical"
+    },
+    {
+      "id": "cascade-blindness",
+      "name": "Delete/Update Without Cascading to Related Entities",
+      "changeType": "cascade-change",
+      "description": "AI implements a delete or update operation on a parent entity but does not cascade the operation to related child entities, leaving orphaned records or inconsistent state.",
+      "testPattern": {
+        "assertType": "call-made",
+        "description": "Verify cascade delete/update calls are made to related entities"
+      },
+      "ossEvidence": null,
+      "provisional": true,
+      "fixtureRef": "fixture-007-cascade-missing",
+      "severity": "high"
+    },
+    {
+      "id": "event-not-emitted",
+      "name": "Event Emission Dropped During Refactor",
+      "changeType": "cascade-change",
+      "description": "AI refactors an event-emitting handler and silently drops the event emission call. Downstream listeners and notification handlers never fire, breaking async workflows.",
+      "testPattern": {
+        "assertType": "call-made",
+        "description": "Verify event is emitted after state change"
+      },
+      "ossEvidence": null,
+      "provisional": true,
+      "fixtureRef": "fixture-008-event-not-emitted",
+      "severity": "high"
+    },
+    {
+      "id": "cache-invalidation-missing",
+      "name": "Write Handler Loses Cache Invalidation",
+      "changeType": "cascade-change",
+      "description": "AI rewrites a write handler and loses the cache invalidation call. Subsequent reads return stale cached data until TTL expires, causing data consistency issues.",
+      "testPattern": {
+        "assertType": "call-made",
+        "description": "Verify cache is invalidated after write"
+      },
+      "ossEvidence": null,
+      "provisional": true,
+      "fixtureRef": "fixture-009-cache-invalidation",
+      "severity": "medium"
+    },
+    {
+      "id": "migration-drift",
+      "name": "ORM Schema Updated Without Migration File",
+      "changeType": "schema-migration",
+      "description": "AI updates the ORM schema model (Prisma, SQLAlchemy, Drizzle) to add fields or change column types but does not create the corresponding migration file. The database schema lags behind the code.",
+      "testPattern": {
+        "assertType": "artifact-exists",
+        "description": "Verify migration file exists for schema change"
+      },
+      "ossEvidence": null,
+      "provisional": true,
+      "fixtureRef": "fixture-010-migration-drift",
+      "severity": "critical"
+    },
+    {
+      "id": "type-widening",
+      "name": "Return Type Widened to Include Null",
+      "changeType": "type-widening",
+      "description": "AI changes a function return type from T to T|null (or adds undefined) but callers access properties on the return value without null checks, causing runtime TypeError on the null path.",
+      "testPattern": {
+        "assertType": "call-made",
+        "description": "Verify caller handles null return case"
+      },
+      "ossEvidence": null,
+      "provisional": true,
+      "fixtureRef": "fixture-012-type-widening",
+      "severity": "high"
+    },
+    {
+      "id": "error-swallowed",
+      "name": "Error Handler Swallows Exceptions Silently",
+      "changeType": "cascade-change",
+      "description": "AI wraps a critical operation in a try/catch that swallows all errors without re-throwing or logging. Failures become invisible: callers' catch blocks never fire, monitoring sees no errors.",
+      "testPattern": {
+        "assertType": "call-made",
+        "description": "Verify errors propagate to caller"
+      },
+      "ossEvidence": null,
+      "provisional": true,
+      "fixtureRef": "fixture-014-error-swallowed",
+      "severity": "high"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "BlindSpotCatalog",
+  "type": "object",
+  "required": ["version", "patterns"],
+  "properties": {
+    "version": { "type": "string" },
+    "patterns": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "changeType", "description", "testPattern", "provisional"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "name": { "type": "string", "minLength": 3 },
+          "changeType": {
+            "type": "string",
+            "enum": ["contract-change", "new-write-endpoint", "new-delete-operation", "new-auth-check", "schema-migration", "cascade-change", "type-widening", "unknown"]
+          },
+          "description": { "type": "string", "minLength": 10 },
+          "testPattern": {
+            "type": "object",
+            "required": ["assertType", "description"],
+            "properties": {
+              "assertType": { "type": "string", "enum": ["field-sent", "field-not-sent", "status-code", "artifact-exists", "artifact-missing", "call-made", "call-not-made"] },
+              "description": { "type": "string" },
+              "field": { "type": "string" },
+              "value": {}
+            }
+          },
+          "ossEvidence": { "type": ["string", "null"] },
+          "provisional": { "type": "boolean" },
+          "fixtureRef": { "type": ["string", "null"] },
+          "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] }
+        }
+      }
+    }
+  }
+}

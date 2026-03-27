@@ -1,0 +1,29 @@
+[
+  {
+    "task_id": "TASK-001",
+    "slug": "optinum",
+    "title": "Pipeline I/O Types",
+    "date": "2026-03-27T06:45:33.597071Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
+  },
+  {
+    "task_id": "TASK-009",
+    "slug": "optinum",
+    "title": "Fixture Validation Harness",
+    "date": "2026-03-27T06:45:50.253185Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
+  },
+  {
+    "task_id": "TASK-014",
+    "slug": "optinum",
+    "title": "Blind Spot Catalog \u2014 JSON Schema + Initial Entries",
+    "date": "2026-03-27T06:47:11.625159Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
+  }
+]
