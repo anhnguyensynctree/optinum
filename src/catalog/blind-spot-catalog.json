@@ -26,8 +26,8 @@
         "description": "Verify caller handles new response shape",
         "field": "data"
       },
-      "ossEvidence": null,
-      "provisional": true,
+      "ossEvidence": "https://github.com/Monichre/digital-mischief-group/pull/1 — Firecrawl v2 API changed branding fields into a nested data envelope; callers destructuring top-level payload.branding broke silently; fix added fallback for both shapes",
+      "provisional": false,
       "fixtureRef": "fixture-002-return-shape-change",
       "severity": "high"
     },
@@ -85,8 +85,8 @@
         "description": "Verify caller sends idempotency key",
         "field": "idempotencyKey"
       },
-      "ossEvidence": null,
-      "provisional": true,
+      "ossEvidence": "https://github.com/adamrodi/groundwork/pull/6 — Stripe PaymentIntent created without idempotency key; code review identified the gap and fix added idempotency key to PaymentIntent creation call",
+      "provisional": false,
       "fixtureRef": "fixture-006-idempotency",
       "severity": "critical"
     },
@@ -99,8 +99,8 @@
         "assertType": "call-made",
         "description": "Verify ownership check is performed after auth check"
       },
-      "ossEvidence": null,
-      "provisional": true,
+      "ossEvidence": "https://github.com/fagemx/edda/issues/288 — router() exposed publicly without auth middleware; post_scope_check accepted arbitrary project_id without verifying caller owned the resource; fix scoped router to pub(crate) and added ownership validation",
+      "provisional": false,
       "fixtureRef": "fixture-004-auth-ownership",
       "severity": "critical"
     },
@@ -113,8 +113,8 @@
         "assertType": "call-made",
         "description": "Verify auth middleware is applied to new endpoint"
       },
-      "ossEvidence": null,
-      "provisional": true,
+      "ossEvidence": "https://github.com/OneStepAt4time/aegis/issues/349 — new route hooks added outside authenticated router group using broad startsWith('/v1/hooks') match, making unintended paths publicly accessible; fix switched to exact path matching with auth on all endpoints",
+      "provisional": false,
       "fixtureRef": "fixture-003-missing-auth-check",
       "severity": "critical"
     },
@@ -141,8 +141,8 @@
         "assertType": "call-made",
         "description": "Verify atomic operation is wrapped in transaction"
       },
-      "ossEvidence": null,
-      "provisional": true,
+      "ossEvidence": "https://github.com/adssoccer1/finserv-monorepo/issues/11 — LedgerService.recordPayment() writes DEBIT and CREDIT sequentially with no transaction boundary; crash between writes leaves ledger permanently imbalanced; also https://github.com/ChainSafe/canton-middleware/issues/171 — EVM store SaveEvmTransaction, SaveEvmLog, NextEvmBlock executed as independent statements causing orphaned records on partial failure",
+      "provisional": false,
       "fixtureRef": "fixture-011-transaction-missing",
       "severity": "critical"
     },
@@ -197,8 +197,8 @@
         "assertType": "artifact-exists",
         "description": "Verify migration file exists for schema change"
       },
-      "ossEvidence": null,
-      "provisional": true,
+      "ossEvidence": "https://github.com/BerriAI/litellm/issues/24433 — Prisma schema for LiteLLM_MCPServerTable updated with source_url column but migration file not generated; column missing on every container restart causing runtime errors; also https://github.com/sarathfranciswork/ignite/issues/270 — squashed migration files inconsistent with schema causing drift in production",
+      "provisional": false,
       "fixtureRef": "fixture-010-migration-drift",
       "severity": "critical"
     },
@@ -255,8 +255,8 @@
         "assertType": "field-sent",
         "description": "Verify all config references resolve to the same provider/key"
       },
-      "ossEvidence": "OSS-search: GitHub commits containing both 'ANTHROPIC_API_KEY' and 'GROQ_API_KEY' in the same diff where one file was updated and another was not — common in LLM wrapper repos",
-      "provisional": true,
+      "ossEvidence": "https://github.com/SamuelPalubaCZ/Picas/pull/10 — env var GOOGLE_FONT_API_KEY renamed to google_font_api_key in one file; next.config.js and other files still referenced the old name; app failed silently on font loading; required a follow-up PR to sweep remaining references",
+      "provisional": false,
       "fixtureRef": null,
       "severity": "high",
       "aiNative": true,
@@ -287,8 +287,8 @@
         "assertType": "field-sent",
         "description": "Verify error response shape is validated before field access"
       },
-      "ossEvidence": "OSS-search: GitHub TypeScript repos, commits fixing 'Cannot read properties of undefined' in catch blocks after type assertion — search: 'fix catch as CustomError' or 'add type guard error'",
-      "provisional": true,
+      "ossEvidence": "https://github.com/RocketChat/Rocket.Chat/pull/39428 — Twilio SMS provider used catch (e: any) and accessed e.message directly; when a non-Error value was thrown, e.message was undefined causing agents to receive 'undefined' notification; fix replaced as-cast with instanceof narrowing",
+      "provisional": false,
       "fixtureRef": null,
       "severity": "medium",
       "aiNative": true,

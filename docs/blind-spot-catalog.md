@@ -2,11 +2,9 @@
 
 AI coding agents have systematic, predictable failure patterns. They write happy paths thoroughly and miss integration boundary conditions — not randomly, but in ways shaped by their training distribution. The blind spot catalog encodes these patterns so Optinum can generate targeted tests for each one.
 
-Catalog version: `0.1.0`. All patterns are currently marked `provisional` pending OSS benchmark validation.
+Catalog version: `0.3.0`. Patterns marked `confirmed` have real OSS evidence. Patterns marked `provisional` have no confirmed benchmark yet.
 
 ## Change Types
-
-The classifier assigns one of these types to each diff:
 
 | Change Type | Trigger |
 |---|---|
@@ -15,160 +13,112 @@ The classifier assigns one of these types to each diff:
 | `cascade-change` | Delete/update with side effects, event emission, cache, error handling |
 | `schema-migration` | ORM model changed (Prisma, SQLAlchemy, Drizzle) |
 | `type-widening` | Return type changed to include `null` or `undefined` |
+| `config-drift` | Service config or env key updated in one file, stale references elsewhere |
 
 ---
 
-## contract-change Patterns
+## Pattern Summary Table
 
-### `params-renamed` — Renamed API Parameters
-**Severity:** high
-
-AI renames request parameters in the route handler schema but callers in other files still send the old parameter names, causing validation failures at runtime.
-
-**Test strategy:** Send a request with the old parameter name. Expect validation failure (4xx). Verify the renamed parameter name is accepted.
-
----
-
-### `return-shape-changed` — Changed Response Shape
-**Severity:** high
-
-AI restructures the API response object (e.g., wraps data in a nested key) but callers destructure the old shape, causing TypeError at runtime when accessing missing properties.
-
-**Test strategy:** Send a valid request. Verify the response body contains the new shape (e.g., `data` wrapper). Verify callers that access the old flat shape fail.
-
----
-
-### `required-field-added` — New Required Field Not Sent by Callers
-**Severity:** critical
-
-AI adds a new required field to the API schema but callers in the blast radius do not send this field, causing schema validation errors on every call.
-
-**Test strategy:** Omit the new required field. Expect 400/422. Send it. Expect 200.
-
----
-
-### `field-removed` — Removed Field Still Sent by Callers
-**Severity:** medium
-
-AI removes a field from the API schema (strict validation mode) but callers still send it, causing validation failures or silent data loss.
-
-**Test strategy:** Send the removed field. In strict mode, expect 400. In passthrough mode, verify no data loss.
+| Pattern Name | Change Type | AI-Native? | AI Native Reason | Severity | Status | Evidence |
+|---|---|---|---|---|---|---|
+| Renamed API Parameters | contract-change | — | — | high | confirmed | [PR#35](https://github.com/emarco177/langchain-course/pull/35) |
+| Changed Response Shape | contract-change | — | — | high | confirmed | [PR#1](https://github.com/Monichre/digital-mischief-group/pull/1) |
+| New Required Field Not Sent | contract-change | — | — | critical | confirmed | [Issue#95](https://github.com/cyruzin/golang-tmdb/issues/95) |
+| Removed Field Still Sent | contract-change | — | — | medium | provisional | — |
+| HTTP Status Code Changed | contract-change | — | — | medium | provisional | — |
+| Idempotency Key Not Sent | new-write-endpoint | — | — | critical | confirmed | [PR#6](https://github.com/adamrodi/groundwork/pull/6) |
+| Auth Check Without Ownership | new-write-endpoint | — | — | critical | confirmed | [Issue#288](https://github.com/fagemx/edda/issues/288) |
+| New Endpoint Outside Auth Middleware | new-write-endpoint | — | — | critical | confirmed | [Issue#349](https://github.com/OneStepAt4time/aegis/issues/349) |
+| Sanitization Bypassed by Internal Callers | new-write-endpoint | — | — | high | provisional | — |
+| Multi-Step Write Without Transaction | new-write-endpoint | — | — | critical | confirmed | [Issue#11](https://github.com/adssoccer1/finserv-monorepo/issues/11) |
+| Delete Without Cascading | cascade-change | — | — | high | provisional | — |
+| Event Emission Dropped | cascade-change | — | — | high | provisional | — |
+| Cache Invalidation Lost | cascade-change | — | — | medium | provisional | — |
+| Error Handler Swallows Exceptions | cascade-change | — | — | high | provisional | — |
+| Async forEach Fire-and-Forget | cascade-change | Yes | Human devs know forEach is sync; LLMs learn async/await without learning the iterator contract | high | confirmed | [PR#304898](https://github.com/microsoft/vscode/pull/304898) |
+| ORM Schema Without Migration | schema-migration | — | — | critical | confirmed | [Issue#24433](https://github.com/BerriAI/litellm/issues/24433) |
+| Return Type Widened to Null | type-widening | — | — | high | provisional | — |
+| Nested Property Without Null Guard | type-widening | Yes | LLMs trained on happy-path examples; null branches appear less in training data so guards are omitted | high | confirmed | [PR#1709](https://github.com/open-feature/java-sdk-contrib/pull/1709) |
+| Error Cast Without Runtime Validation | contract-change | Yes | AI asserts the intended type from context; doesn't model divergence between declared and runtime shape | medium | confirmed | [PR#39428](https://github.com/RocketChat/Rocket.Chat/pull/39428) |
+| Provider Config Missed Elsewhere | config-drift | Yes | AI edits the file in scope; doesn't grep for all references the way a human doing a swap would | high | confirmed | [PR#10](https://github.com/SamuelPalubaCZ/Picas/pull/10) |
+| Mock Circular — Same Assumption | contract-change | Yes | AI generates code and test in same session with same context; mock reflects AI's assumption about dependency | high | provisional | — |
+| AI Tests Miss Boundary Values | type-widening | Yes | Training data has far more success-path examples; AI reproduces the distribution it was trained on | high | provisional | — |
+| Error Path Exists, No Test | cascade-change | Yes | AI writes error handling it has seen; doesn't write tests for it because test training data favours success paths | high | provisional | — |
 
 ---
 
-### `status-code-changed` — HTTP Status Code Changed
-**Severity:** medium
+## AI-Native Patterns Detail
 
-AI changes the HTTP status code returned by an endpoint (e.g., 201 → 200) but callers check the old status code to determine success, causing silent logic failures.
+These 7 patterns are flagged `aiNative: true` — they appear at systematically higher rates in AI-generated code than in human-authored code because they are artifacts of LLM training distribution, not random mistakes.
 
-**Test strategy:** Send a valid request. Assert the new status code is returned. Verify caller logic that branches on status code handles the new value.
+### `async-foreach-fire-forget` — Async forEach Fire-and-Forget
+**Severity:** high | **AI Native**
 
----
+AI writes `arr.forEach(async item => await fn(item))` not realising forEach ignores returned promises. Each async callback fires without being awaited — errors are silently swallowed and callers observe completion before work is done.
 
-## new-write-endpoint Patterns
+**Why AI gets this wrong:** Human developers know forEach is synchronous. LLMs learn the async/await pattern without learning the iterator contract — they see `async` + `await` together in examples and reproduce the pattern regardless of the collection method.
 
-### `idempotency-missing` — Idempotency Key Not Sent by Callers
-**Severity:** critical
-
-AI adds an idempotency key requirement to a payment or mutation endpoint schema but callers that trigger the endpoint do not generate or send the idempotency key, causing duplicate operations.
-
-**Test strategy:** Send a request without `idempotencyKey`. Verify the endpoint rejects it or creates a duplicate. Send with a key. Verify exactly one side effect.
+**OSS Evidence:** [microsoft/vscode#304898](https://github.com/microsoft/vscode/pull/304898) — forEach(async ...) causing fire-and-forget promises in notebook code; fixed by switching to Promise.all
 
 ---
 
-### `auth-ownership-gap` — Auth Check Without Ownership Verification
-**Severity:** critical
+### `config-drift-across-files` — Provider Config Updated in One File, Missed Elsewhere
+**Severity:** high | **AI Native**
 
-AI adds authentication check (user is logged in) to a new endpoint but omits ownership check (user owns the resource), enabling any authenticated user to access any other user's data (IDOR vulnerability).
+AI updates an LLM provider, API key reference, or service config in the file it is editing but leaves stale references in other files. The app boots with split config — one path uses the new provider, another still calls the old one.
 
-**Test strategy:** Authenticate as user A. Request a resource belonging to user B. Expect 403.
+**Why AI gets this wrong:** AI applies changes to the file in scope; it does not grep the codebase for all references the way a human doing a provider swap would.
 
----
-
-### `auth-check-missing` — New Endpoint Added Outside Auth Middleware
-**Severity:** critical
-
-AI adds a new route or endpoint file outside the authenticated router group, bypassing all authentication middleware. The endpoint is publicly accessible when it should be protected.
-
-**Test strategy:** Send an unauthenticated request to the new endpoint. Expect 401.
+**OSS Evidence:** [SamuelPalubaCZ/Picas#10](https://github.com/SamuelPalubaCZ/Picas/pull/10) — env var renamed in one file; next.config.js and other files still referenced old name; required follow-up PR to sweep remaining references
 
 ---
 
-### `input-trust-violation` — Sanitization at HTTP Boundary Bypassed by Internal Callers
-**Severity:** high
+### `optional-chain-assumed-truthy` — Nested Property Access Without Null Guard
+**Severity:** high | **AI Native**
 
-AI adds input sanitization at the HTTP handler level but internal callers (background jobs, service methods) call the underlying service function directly, bypassing sanitization entirely.
+AI accesses deeply nested properties (`obj.user.profile.avatar`) on values that can be null or undefined, without optional chaining or null guards.
 
-**Test strategy:** Trigger the service method directly with unsanitized input. Verify the sanitization layer is still applied.
+**Why AI gets this wrong:** LLMs are trained on happy-path examples; null/undefined branches appear less frequently in training data so guards are systematically omitted.
 
----
-
-### `transaction-missing` — Multi-Step Operation Without Database Transaction
-**Severity:** critical
-
-AI implements a multi-step write operation (debit + credit, create + update) as sequential database calls without wrapping in a transaction. Partial failures leave the database in an inconsistent state.
-
-**Test strategy:** Simulate a failure after the first write. Verify the first write is rolled back (no partial state persisted).
+**OSS Evidence:** [open-feature/java-sdk-contrib#1709](https://github.com/open-feature/java-sdk-contrib/pull/1709) — null pointer exception from missing descriptor check on optional value; fix added null guard before access
 
 ---
 
-## cascade-change Patterns
+### `error-type-assertion-unchecked` — Error Response Cast to Type Without Runtime Validation
+**Severity:** medium | **AI Native**
 
-### `cascade-blindness` — Delete/Update Without Cascading to Related Entities
-**Severity:** high
+AI uses TypeScript `as` assertions to cast API error responses or exception objects to a typed shape without verifying the shape at runtime. When the actual error differs (e.g., string vs object), code accesses undefined fields silently.
 
-AI implements a delete or update operation on a parent entity but does not cascade the operation to related child entities, leaving orphaned records or inconsistent state.
+**Why AI gets this wrong:** AI knows the intended type from context and asserts it confidently; it doesn't model the possibility that the runtime value diverges from the declared shape.
 
-**Test strategy:** Delete/update the parent. Verify related child records are also deleted/updated.
-
----
-
-### `event-not-emitted` — Event Emission Dropped During Refactor
-**Severity:** high
-
-AI refactors an event-emitting handler and silently drops the event emission call. Downstream listeners and notification handlers never fire, breaking async workflows.
-
-**Test strategy:** Trigger the handler. Verify the expected event is emitted (spy on event bus / message queue).
+**OSS Evidence:** [RocketChat/Rocket.Chat#39428](https://github.com/RocketChat/Rocket.Chat/pull/39428) — Twilio SMS provider used `catch (e: any)` and accessed `e.message` directly; when a non-Error value was thrown, `e.message` was undefined causing agents to receive "undefined" notification; fix replaced as-cast with instanceof narrowing
 
 ---
 
-### `cache-invalidation-missing` — Write Handler Loses Cache Invalidation
-**Severity:** medium
+### `mocked-dependency-circular-test` — Unit Test Mocks the Same Assumption the Code Has
+**Severity:** high | **AI Native**
 
-AI rewrites a write handler and loses the cache invalidation call. Subsequent reads return stale cached data until TTL expires.
+AI writes a unit test that mocks a dependency to return the exact shape the code was written to expect. Both code and mock share the same incorrect assumption. The test passes. The real caller sends a different shape and gets a runtime error.
 
-**Test strategy:** Write a value. Read it back. Verify the cache was invalidated and the fresh value is returned.
-
----
-
-### `error-swallowed` — Error Handler Swallows Exceptions Silently
-**Severity:** high
-
-AI wraps a critical operation in a try/catch that swallows all errors without re-throwing or logging. Failures become invisible: callers' catch blocks never fire, monitoring sees no errors.
-
-**Test strategy:** Force an error condition. Verify it propagates to the caller (is not swallowed).
+**Why AI gets this wrong:** AI generates both code and test in the same session with the same context. The mock reflects what the AI assumed the dependency returns — if that assumption is wrong, the test is a circular proof of nothing.
 
 ---
 
-## schema-migration Patterns
+### `boundary-values-untested` — AI Test Suite Has No Boundary or Edge Case Assertions
+**Severity:** high | **AI Native**
 
-### `migration-drift` — ORM Schema Updated Without Migration File
-**Severity:** critical
+AI generates a test suite with high line coverage but only tests happy-path inputs — the exact values used in examples. Empty arrays, zero, null, empty string, max integer, duplicate keys: none appear.
 
-AI updates the ORM schema model (Prisma, SQLAlchemy, Drizzle) to add fields or change column types but does not create the corresponding migration file. The database schema lags behind the code.
-
-**Test strategy:** Verify a migration file exists with a timestamp newer than the model change. Verify the migration includes the schema delta.
+**Why AI gets this wrong:** Training data contains far more success-path examples than failure-path examples. AI reproduces the distribution it was trained on — tests cover what the training data showed being tested.
 
 ---
 
-## type-widening Patterns
+### `error-path-untested-by-ai` — Error Path Exists in Code but Has No Test
+**Severity:** high | **AI Native**
 
-### `type-widening` — Return Type Widened to Include Null
-**Severity:** high
+AI writes a function with explicit error handling (try/catch, error return, 400/500 status branch) but writes no test for the error case. The error path is syntactically correct but functionally unverified.
 
-AI changes a function return type from `T` to `T | null` (or adds `undefined`) but callers access properties on the return value without null checks, causing runtime TypeError on the null path.
-
-**Test strategy:** Trigger the null return path. Verify callers handle it without throwing.
+**Why AI gets this wrong:** AI writes error handling because it has seen the pattern. It does not write the test for it because the training data for test generation overwhelmingly shows success path tests.
 
 ---
 
