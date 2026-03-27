@@ -1,0 +1,115 @@
+name: Inner Loop — Per-PR CI Gate
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  inner-loop:
+    name: Run inner loop validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Detect changed files
+        id: changed
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              per_page: 100,
+            });
+            const filenames = files.map(f => f.filename).join(',');
+            core.setOutput('filenames', filenames);
+
+      - name: Run inner loop
+        id: inner
+        env:
+          PR_FILES: ${{ steps.changed.outputs.filenames }}
+        run: |
+          node --require tsx/cjs --input-type=module << 'EOF'
+          import { runInnerLoop } from "./src/ci/inner-loop.js";
+          import * as path from "path";
+          import * as fs from "fs";
+
+          const prFiles = (process.env.PR_FILES ?? "").split(",").filter(Boolean);
+          const fixturesDir = path.resolve("fixtures");
+          const result = await runInnerLoop(fixturesDir, prFiles);
+
+          console.log("=".repeat(70));
+          console.log(result.summary);
+          console.log("=".repeat(70));
+
+          const output = process.env.GITHUB_OUTPUT ?? "";
+          if (output) {
+            const summary = result.summary.replace(/\n/g, "%0A");
+            fs.appendFileSync(output, `passed=${result.passed}\n`);
+            fs.appendFileSync(output, `skipped=${result.skipped}\n`);
+            fs.appendFileSync(output, `skip_reason=${result.skipReason ?? ""}\n`);
+            fs.appendFileSync(output, `catch_rate=${result.catchRate}\n`);
+            fs.appendFileSync(output, `summary=${summary}\n`);
+          }
+
+          if (!result.passed) {
+            process.exit(1);
+          }
+          EOF
+
+      - name: Post inner loop result as PR comment
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const passed = '${{ steps.inner.outputs.passed }}' === 'true';
+            const skipped = '${{ steps.inner.outputs.skipped }}' === 'true';
+            const skipReason = '${{ steps.inner.outputs.skip_reason }}';
+            const catchRate = parseFloat('${{ steps.inner.outputs.catch_rate }}' || '0');
+            const summary = '${{ steps.inner.outputs.summary }}'.replace(/%0A/g, '\n');
+
+            let body;
+            if (skipped) {
+              body = [
+                `## Optinum Inner Loop — Skipped`,
+                '',
+                `> ${skipReason}`,
+              ].join('\n');
+            } else {
+              const status = passed ? '✅ PASS' : '❌ FAIL';
+              const catchPct = (catchRate * 100).toFixed(1);
+
+              body = [
+                `## Optinum Inner Loop — ${status}`,
+                '',
+                '| Metric | Value | Threshold |',
+                '|--------|-------|-----------|',
+                `| Catch rate | ${catchPct}% | ≥ 80% |`,
+                '',
+                '```',
+                summary || '(no summary available)',
+                '```',
+              ].join('\n');
+            }
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });

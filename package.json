@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "bin": {
+    "optinum": "./bin/optinum.js"
+  },
   "scripts": {
     "test": "node --require tsx/cjs --test src/types/pipeline.test.ts"
   },

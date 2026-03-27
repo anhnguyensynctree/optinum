@@ -259,7 +259,7 @@
 
 ## TASK-010
 **Title:** Synthesis Quality Gate
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-006
 **Milestone:** MVP: CLI Proof of Concept on TypeScript + Python
 **Departments:** [engineering, qa]
@@ -728,7 +728,7 @@
 
 ## TASK-026
 **Title:** Regression Suite CI Gate
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-018
 **Milestone:** Validated & Shareable
 **Departments:** [engineering, qa]

@@ -205,5 +205,23 @@
     "passed": true,
     "fail_at": null,
     "cost_usd": null
+  },
+  {
+    "task_id": "TASK-028",
+    "slug": "optinum",
+    "title": "Inner Loop CI per-PR",
+    "date": "2026-03-27T19:53:22.521925Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
+  },
+  {
+    "task_id": "TASK-011",
+    "slug": "optinum",
+    "title": "CLI optinum test command",
+    "date": "2026-03-27T20:00:09.382474Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
   }
 ]
