@@ -259,5 +259,14 @@
     "passed": true,
     "fail_at": null,
     "cost_usd": null
+  },
+  {
+    "task_id": "TASK-027",
+    "slug": "optinum",
+    "title": "Developer README",
+    "date": "2026-03-27T20:09:07.119270Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
   }
 ]

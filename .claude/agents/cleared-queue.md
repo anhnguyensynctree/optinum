@@ -320,7 +320,7 @@
 
 ## TASK-012
 **Title:** CLI — Output Formatter + Summary
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-007
 **Milestone:** MVP: CLI Proof of Concept on TypeScript + Python
 **Departments:** [engineering]
@@ -348,7 +348,7 @@
 
 ## TASK-013
 **Title:** GitHub Action Wrapper
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-008
 **Milestone:** MVP: CLI Proof of Concept on TypeScript + Python
 **Departments:** [engineering]
@@ -555,7 +555,7 @@
 
 ## TASK-020
 **Title:** Trial Run Counter
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-013
 **Milestone:** deferred — build after method is proven
 **Departments:** [engineering]
@@ -583,7 +583,7 @@
 
 ## TASK-021
 **Title:** `optinum init` Command + Config Schema
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-015
 **Milestone:** Validated & Shareable
 **Departments:** [engineering]
@@ -757,13 +757,14 @@
 
 ## TASK-027
 **Title:** Developer README
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-019
 **Milestone:** Validated & Shareable
 **Departments:** [engineering]
 **Size:** small
 **Gate:** no-gate
 **Depends-on:** [TASK-021, TASK-023]
+**Notes:** README 160 lines + docs/gap-report.md + docs/trust-report.md + docs/blind-spot-catalog.md; commit 95846b5
 
 **Spec:** The system SHALL provide a `README.md` under 300 lines covering: what Optinum does, quick start, how to read gap and trust reports, blind spot catalog reference table, and FAQ — with quick start verified to work exactly as written.
 
