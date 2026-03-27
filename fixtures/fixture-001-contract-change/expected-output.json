@@ -1,0 +1,79 @@
+{
+  "fixture": "fixture-001-contract-change",
+  "description": "Contract change: AI updates API schema but forgets to update callers",
+  "diffFile": "after/src/api/questionnaire/route.ts",
+  "schemaSource": "Zod — QuestionnaireRequestSchema",
+
+  "expectedBlastRadius": {
+    "changed": ["after/src/api/questionnaire/route.ts"],
+    "dependents": [
+      "after/src/home/actions.ts",
+      "after/src/onboarding/actions.ts"
+    ],
+    "dependencies": []
+  },
+
+  "expectedChangeType": "contract-change",
+
+  "expectedContractDelta": {
+    "removed": ["type", "userId"],
+    "added": ["mode", "sessionId"]
+  },
+
+  "expectedTests": [
+    {
+      "testId": "001-A",
+      "caseType": "happy",
+      "description": "POST /api/questionnaire accepts new schema",
+      "payload": { "mode": "quick", "sessionId": "123e4567-e89b-12d3-a456-426614174000" },
+      "expectedStatus": 200
+    },
+    {
+      "testId": "001-B",
+      "caseType": "edge",
+      "description": "POST /api/questionnaire rejects old schema fields",
+      "payload": { "type": "quick", "userId": "123e4567-e89b-12d3-a456-426614174000" },
+      "expectedStatus": 400
+    },
+    {
+      "testId": "001-C",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "contract-change",
+      "description": "startQuestionnaire() sends params matching current API contract",
+      "caller": "after/src/home/actions.ts",
+      "callerFunction": "startQuestionnaire",
+      "assertSendsField": "mode",
+      "assertSendsField2": "sessionId",
+      "assertNotSendsField": "type",
+      "assertNotSendsField2": "userId",
+      "expectedResult": "FAIL"
+    },
+    {
+      "testId": "001-D",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "contract-change",
+      "description": "beginOnboarding() sends params matching current API contract",
+      "caller": "after/src/onboarding/actions.ts",
+      "callerFunction": "beginOnboarding",
+      "assertSendsField": "mode",
+      "assertSendsField2": "sessionId",
+      "assertNotSendsField": "type",
+      "assertNotSendsField2": "userId",
+      "expectedResult": "FAIL"
+    }
+  ],
+
+  "passCriteria": {
+    "upwardDependentsFound": ["after/src/home/actions.ts", "after/src/onboarding/actions.ts"],
+    "testsGenerated": ["001-A", "001-B", "001-C", "001-D"],
+    "testsCThatMustFail": ["001-C", "001-D"],
+    "bugCaughtVia": "upward blast radius — callers not in diff"
+  },
+
+  "failCriteria": [
+    "001-C not generated — upward traversal missed home/actions.ts",
+    "001-D not generated — upward traversal missed onboarding/actions.ts",
+    "001-C passes on broken caller — contract assertion wrong",
+    "001-D passes on broken caller — contract assertion wrong"
+  ]
+}

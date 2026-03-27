@@ -1,0 +1,71 @@
+{
+  "fixture": "fixture-009-cache-invalidation",
+  "description": "Cache invalidation: AI rewrites profile update handler but drops cache.delete() — stale profile served after updates",
+  "diffFile": "after/src/api/users/[id]/profile/route.ts",
+  "schemaSource": "none — PUT operation",
+
+  "expectedBlastRadius": {
+    "changed": ["after/src/api/users/[id]/profile/route.ts"],
+    "dependents": ["after/src/api/users/[id]/route.ts"],
+    "dependencies": ["after/src/lib/cache.ts"]
+  },
+
+  "expectedChangeType": "cache-invalidation",
+
+  "expectedContractDelta": {
+    "removed": ["cache.delete(user:id)"],
+    "added": []
+  },
+
+  "expectedTests": [
+    {
+      "testId": "009-A",
+      "caseType": "happy",
+      "description": "PUT /api/users/user-1/profile { name: 'Bob' } returns 200 with updated profile",
+      "payload": { "name": "Bob" },
+      "expectedStatus": 200
+    },
+    {
+      "testId": "009-B",
+      "caseType": "edge",
+      "description": "PUT with empty body returns 400",
+      "payload": {},
+      "expectedStatus": 400
+    },
+    {
+      "testId": "009-C",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "cache-invalidation-missing",
+      "description": "After PUT to update name, GET /api/users/user-1 still returns stale cached name 'Alice'",
+      "caller": "after/src/api/users/[id]/route.ts",
+      "callerFunction": "GET",
+      "assertCacheInvalidated": false,
+      "expectedResult": "FAIL"
+    },
+    {
+      "testId": "009-D",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "cache-invalidation-missing",
+      "description": "cache.delete not called in updated PUT handler — stale reads permanent",
+      "caller": "after/src/api/users/[id]/route.ts",
+      "assertCallsMissing": ["cache.delete"],
+      "expectedResult": "FAIL"
+    }
+  ],
+
+  "passCriteria": {
+    "upwardDependentsFound": ["after/src/api/users/[id]/route.ts"],
+    "downwardDependenciesFound": ["after/src/lib/cache.ts"],
+    "testsGenerated": ["009-A", "009-B", "009-C", "009-D"],
+    "testsThatMustFail": ["009-C", "009-D"],
+    "bugCaughtVia": "cache invalidation removed from diff — GET endpoint serves stale data"
+  },
+
+  "failCriteria": [
+    "009-C not generated — sibling route GET not found as cache reader",
+    "009-D not generated — cache.delete removal not detected in diff",
+    "009-C passes — stale cache assertion wrong",
+    "009-D passes on broken handler — missing call assertion wrong",
+    "contract delta did not flag cache.delete removal"
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "fixture": "fixture-011-transaction-missing",
+  "description": "Transaction missing: AI splits debit+credit into two calls without transaction — partial failure loses funds",
+  "diffFile": "after/src/services/wallet.ts",
+  "schemaSource": "none — service layer",
+
+  "expectedBlastRadius": {
+    "changed": [
+      "after/src/services/wallet.ts",
+      "after/src/services/debit.ts",
+      "after/src/services/ledger.ts",
+      "after/src/api/payments/transfer/route.ts"
+    ],
+    "dependents": ["after/src/billing/subscription.ts"],
+    "dependencies": []
+  },
+
+  "expectedChangeType": "transaction-missing",
+
+  "expectedContractDelta": {
+    "removed": ["atomic transfer"],
+    "added": ["debitWallet", "creditLedger"]
+  },
+
+  "expectedTests": [
+    {
+      "testId": "011-A",
+      "caseType": "happy",
+      "description": "POST /api/payments/transfer with valid params — both debit and credit succeed",
+      "payload": {
+        "fromId": "123e4567-e89b-12d3-a456-426614174000",
+        "toId": "223e4567-e89b-12d3-a456-426614174001",
+        "amount": 50
+      },
+      "expectedStatus": 200
+    },
+    {
+      "testId": "011-B",
+      "caseType": "edge",
+      "description": "POST /api/payments/transfer with amount=0 returns 400",
+      "payload": {
+        "fromId": "123e4567-e89b-12d3-a456-426614174000",
+        "toId": "223e4567-e89b-12d3-a456-426614174001",
+        "amount": 0
+      },
+      "expectedStatus": 400
+    },
+    {
+      "testId": "011-C",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "transaction-missing",
+      "description": "creditLedger() throws after debitWallet() commits — debit occurs without matching credit (funds lost)",
+      "assertPartialFailureLeavesDebitWithoutCredit": true,
+      "expectedResult": "FAIL"
+    },
+    {
+      "testId": "011-D",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "transaction-missing",
+      "description": "chargeSubscription() assumes transferFunds is atomic — partial failure leaves corrupt balance state",
+      "caller": "after/src/billing/subscription.ts",
+      "callerFunction": "chargeSubscription",
+      "assertTransactionWrapped": false,
+      "expectedResult": "FAIL"
+    }
+  ],
+
+  "passCriteria": {
+    "upwardDependentsFound": ["after/src/billing/subscription.ts"],
+    "testsGenerated": ["011-A", "011-B", "011-C", "011-D"],
+    "testsThatMustFail": ["011-C", "011-D"],
+    "bugCaughtVia": "non-atomic multi-write — partial failure leaves corrupt state"
+  },
+
+  "failCriteria": [
+    "011-C not generated — partial failure scenario missed",
+    "011-D not generated — chargeSubscription caller missed"
+  ]
+}

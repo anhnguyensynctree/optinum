@@ -1,0 +1,87 @@
+{
+  "fixture": "fixture-006-idempotency",
+  "description": "Idempotency: AI adds required idempotencyKey field to payment schema but forgets to update callers",
+  "diffFile": "after/src/api/payments/charge/route.ts",
+  "schemaSource": "Zod — ChargeSchema",
+
+  "expectedBlastRadius": {
+    "changed": ["after/src/api/payments/charge/route.ts"],
+    "dependents": [
+      "after/src/checkout/actions.ts",
+      "after/src/utils/retry.ts"
+    ],
+    "dependencies": []
+  },
+
+  "expectedChangeType": "contract-change",
+
+  "expectedContractDelta": {
+    "removed": [],
+    "added": ["idempotencyKey"]
+  },
+
+  "expectedTests": [
+    {
+      "testId": "006-A",
+      "caseType": "happy",
+      "description": "POST /api/payments/charge with all required fields including idempotencyKey returns 200",
+      "payload": {
+        "amount": 5000,
+        "currency": "usd",
+        "customerId": "cus_abc123",
+        "idempotencyKey": "550e8400-e29b-41d4-a716-446655440000"
+      },
+      "expectedStatus": 200
+    },
+    {
+      "testId": "006-B",
+      "caseType": "edge",
+      "description": "POST with duplicate idempotencyKey returns 200 — idempotent, charge not duplicated",
+      "payload": {
+        "amount": 5000,
+        "currency": "usd",
+        "customerId": "cus_abc123",
+        "idempotencyKey": "550e8400-e29b-41d4-a716-446655440000"
+      },
+      "expectedStatus": 200
+    },
+    {
+      "testId": "006-C",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "idempotency-key-missing",
+      "description": "submitPayment() sends params without idempotencyKey — ZodError thrown, payment fails",
+      "caller": "after/src/checkout/actions.ts",
+      "callerFunction": "submitPayment",
+      "assertNotSendsField": "idempotencyKey",
+      "expectedResult": "FAIL"
+    },
+    {
+      "testId": "006-D",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "idempotency-key-missing",
+      "description": "retryPayment() sends params without idempotencyKey — retry calls will always fail validation",
+      "caller": "after/src/utils/retry.ts",
+      "callerFunction": "retryPayment",
+      "assertNotSendsField": "idempotencyKey",
+      "expectedResult": "FAIL"
+    }
+  ],
+
+  "passCriteria": {
+    "upwardDependentsFound": [
+      "after/src/checkout/actions.ts",
+      "after/src/utils/retry.ts"
+    ],
+    "testsGenerated": ["006-A", "006-B", "006-C", "006-D"],
+    "testsThatMustFail": ["006-C", "006-D"],
+    "bugCaughtVia": "upward blast radius — payment callers not in diff"
+  },
+
+  "failCriteria": [
+    "006-C not generated — upward traversal missed checkout/actions.ts",
+    "006-D not generated — upward traversal missed utils/retry.ts",
+    "006-C passes on broken caller — idempotencyKey assertion wrong",
+    "006-D passes on broken caller — idempotencyKey assertion wrong",
+    "schema delta not detected — idempotencyKey addition missed"
+  ]
+}

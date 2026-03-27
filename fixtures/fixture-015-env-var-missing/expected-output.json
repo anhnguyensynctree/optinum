@@ -1,0 +1,80 @@
+{
+  "fixture": "fixture-015-env-var-missing",
+  "description": "Env var missing: AI adds STRIPE_WEBHOOK_SECRET usage but never adds it to .env.example — CI and fresh clones fail",
+  "diffFile": "after/src/api/webhooks/stripe/route.ts",
+  "schemaSource": "process.env — STRIPE_WEBHOOK_SECRET",
+  "expectedBlastRadius": {
+    "changed": [
+      "after/src/api/webhooks/stripe/route.ts",
+      "after/src/lib/stripe.ts"
+    ],
+    "dependents": ["after/src/jobs/subscription-sync.ts"],
+    "dependencies": [],
+    "missingArtifact": "after/.env.example (STRIPE_WEBHOOK_SECRET entry)"
+  },
+  "expectedChangeType": "env-var-missing",
+  "expectedContractDelta": {
+    "removed": [],
+    "added": ["STRIPE_WEBHOOK_SECRET (referenced in code but absent from .env.example)"]
+  },
+  "expectedTests": [
+    {
+      "testId": "015-A",
+      "caseType": "happy",
+      "description": "POST /api/webhooks/stripe with valid Stripe signature and STRIPE_WEBHOOK_SECRET set; returns 200 { received: true, type: ... }",
+      "payload": {
+        "stripeSignatureValid": true,
+        "envVars": { "STRIPE_WEBHOOK_SECRET": "whsec_test_secret" }
+      },
+      "expectedStatus": 200
+    },
+    {
+      "testId": "015-B",
+      "caseType": "edge",
+      "description": "POST /api/webhooks/stripe with invalid Stripe signature; returns 400 { error: 'Webhook signature verification failed' }",
+      "payload": {
+        "stripeSignatureValid": false,
+        "envVars": { "STRIPE_WEBHOOK_SECRET": "whsec_test_secret" }
+      },
+      "expectedStatus": 400
+    },
+    {
+      "testId": "015-C",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "env-var-undocumented-in-env-example",
+      "description": "STRIPE_WEBHOOK_SECRET is referenced in after/src/api/webhooks/stripe/route.ts and after/src/lib/stripe.ts but is absent from after/.env.example — CI and fresh clones will have undefined",
+      "assertEnvDocumented": false,
+      "expectedResult": "FAIL",
+      "expectedBehavior": "STRIPE_WEBHOOK_SECRET present in code but missing from .env.example; any environment without a pre-existing .env will fail at runtime"
+    },
+    {
+      "testId": "015-D",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "env-var-missing-causes-caller-failure",
+      "description": "validateWebhookSignature() calls getWebhookSecret() which throws when STRIPE_WEBHOOK_SECRET is absent; catch block silently returns false masking a config error as an auth rejection",
+      "caller": "after/src/jobs/subscription-sync.ts",
+      "callerFunction": "validateWebhookSignature",
+      "payload": {
+        "sig": "t=1234,v1=abc",
+        "body": "{}",
+        "envVars": {}
+      },
+      "assertEnvConfigured": false,
+      "expectedResult": "FAIL",
+      "expectedBehavior": "returns false due to thrown config error, not a genuine signature mismatch — root cause is hidden"
+    }
+  ],
+  "passCriteria": {
+    "upwardDependentsFound": ["after/src/jobs/subscription-sync.ts"],
+    "missingArtifactDetected": ".env.example missing STRIPE_WEBHOOK_SECRET",
+    "testsGenerated": ["015-A", "015-B", "015-C", "015-D"],
+    "testsThatMustFail": ["015-C", "015-D"],
+    "bugCaughtVia": "new env var used in code but absent from .env.example — CI/fresh clone fails"
+  },
+  "failCriteria": [
+    "015-C not generated — .env.example check skipped or not part of analysis scope",
+    "015-D not generated — subscription-sync.ts caller missed during blast radius traversal",
+    "015-C passes despite STRIPE_WEBHOOK_SECRET being absent from .env.example",
+    "015-D passes despite getWebhookSecret() throwing when env var is undefined"
+  ]
+}

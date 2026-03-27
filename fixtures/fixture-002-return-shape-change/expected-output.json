@@ -1,0 +1,76 @@
+{
+  "fixture": "fixture-002-return-shape-change",
+  "description": "Return shape change: AI wraps API response in { data } but callers destructure old { user } key",
+  "diffFile": "after/src/api/users/route.ts",
+  "schemaSource": "Response.json shape",
+
+  "expectedBlastRadius": {
+    "changed": ["after/src/api/users/route.ts"],
+    "dependents": [
+      "after/src/profile/page.ts",
+      "after/src/settings/page.ts"
+    ],
+    "dependencies": []
+  },
+
+  "expectedChangeType": "return-shape-change",
+
+  "expectedContractDelta": {
+    "removed": ["user"],
+    "added": ["data"]
+  },
+
+  "expectedTests": [
+    {
+      "testId": "002-A",
+      "caseType": "happy",
+      "description": "GET /api/users returns { data: { id, email, name } } with status 200",
+      "payload": { "id": "123e4567-e89b-12d3-a456-426614174000" },
+      "expectedStatus": 200,
+      "expectedResponseShape": { "data": { "id": "string", "email": "string", "name": "string" } }
+    },
+    {
+      "testId": "002-B",
+      "caseType": "edge",
+      "description": "GET /api/users with missing id returns 400",
+      "payload": {},
+      "expectedStatus": 400
+    },
+    {
+      "testId": "002-C",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "return-shape-change",
+      "description": "loadProfile() reads user.name from response; API now returns { data } not { user }",
+      "caller": "after/src/profile/page.ts",
+      "callerFunction": "loadProfile",
+      "assertSendsField": "data",
+      "assertNotSendsField": "user",
+      "expectedResult": "FAIL"
+    },
+    {
+      "testId": "002-D",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "return-shape-change",
+      "description": "loadSettings() reads user.email from response; API now returns { data } not { user }",
+      "caller": "after/src/settings/page.ts",
+      "callerFunction": "loadSettings",
+      "assertSendsField": "data",
+      "assertNotSendsField": "user",
+      "expectedResult": "FAIL"
+    }
+  ],
+
+  "passCriteria": {
+    "upwardDependentsFound": ["after/src/profile/page.ts", "after/src/settings/page.ts"],
+    "testsGenerated": ["002-A", "002-B", "002-C", "002-D"],
+    "testsThatMustFail": ["002-C", "002-D"],
+    "bugCaughtVia": "upward blast radius — callers not in diff"
+  },
+
+  "failCriteria": [
+    "002-C not generated — upward traversal missed profile/page.ts",
+    "002-D not generated — upward traversal missed settings/page.ts",
+    "002-C passes on broken caller — contract assertion wrong",
+    "002-D passes on broken caller — contract assertion wrong"
+  ]
+}

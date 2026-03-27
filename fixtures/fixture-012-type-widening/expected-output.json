@@ -1,0 +1,76 @@
+{
+  "fixture": "fixture-012-type-widening",
+  "description": "Type widening: AI makes getCurrentUser() return User | null but callers access .email/.name without null check",
+  "diffFile": "after/src/services/auth.ts",
+  "schemaSource": "TypeScript return type — User | null",
+
+  "expectedBlastRadius": {
+    "changed": ["after/src/services/auth.ts"],
+    "dependents": [
+      "after/src/api/profile/route.ts",
+      "after/src/middleware/log.ts"
+    ],
+    "dependencies": []
+  },
+
+  "expectedChangeType": "type-widening",
+
+  "expectedContractDelta": {
+    "removed": ["Promise<User> (non-null)"],
+    "added": ["Promise<User | null>"]
+  },
+
+  "expectedTests": [
+    {
+      "testId": "012-A",
+      "caseType": "happy",
+      "description": "GET /api/profile with valid token returns 200 and user fields",
+      "payload": { "headers": { "Authorization": "Bearer valid-token" } },
+      "expectedStatus": 200
+    },
+    {
+      "testId": "012-B",
+      "caseType": "edge",
+      "description": "GET /api/profile with empty token should return 401 (null user handled)",
+      "payload": { "headers": { "Authorization": "" } },
+      "expectedStatus": 401
+    },
+    {
+      "testId": "012-C",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "type-widening",
+      "description": "profile route accesses user.name when getCurrentUser returns null — TypeError at runtime",
+      "caller": "after/src/api/profile/route.ts",
+      "callerFunction": "GET",
+      "assertNullChecked": false,
+      "expectedResult": "FAIL"
+    },
+    {
+      "testId": "012-D",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "type-widening",
+      "description": "logRequest accesses user.email when getCurrentUser returns null — TypeError at runtime",
+      "caller": "after/src/middleware/log.ts",
+      "callerFunction": "logRequest",
+      "assertNullChecked": false,
+      "expectedResult": "FAIL"
+    }
+  ],
+
+  "passCriteria": {
+    "upwardDependentsFound": [
+      "after/src/api/profile/route.ts",
+      "after/src/middleware/log.ts"
+    ],
+    "testsGenerated": ["012-A", "012-B", "012-C", "012-D"],
+    "testsThatMustFail": ["012-C", "012-D"],
+    "bugCaughtVia": "return type widened to nullable — callers access fields without null guard"
+  },
+
+  "failCriteria": [
+    "012-C not generated — profile route null dereference missed",
+    "012-D not generated — log middleware null dereference missed",
+    "012-C passes on broken caller — null check assertion wrong",
+    "012-D passes on broken caller — null check assertion wrong"
+  ]
+}

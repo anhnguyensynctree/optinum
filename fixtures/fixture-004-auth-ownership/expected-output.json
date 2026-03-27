@@ -1,0 +1,76 @@
+{
+  "fixture": "fixture-004-auth-ownership",
+  "description": "Auth without ownership: AI adds authentication but any authenticated user can access any document",
+  "diffFile": "after/src/api/documents/[id]/route.ts",
+  "schemaSource": "Session — getSession()",
+
+  "expectedBlastRadius": {
+    "changed": [
+      "after/src/api/documents/[id]/route.ts",
+      "after/src/lib/session.ts"
+    ],
+    "dependents": ["after/src/documents/service.ts"],
+    "dependencies": []
+  },
+
+  "expectedChangeType": "auth-ownership",
+
+  "expectedContractDelta": {
+    "removed": ["public access"],
+    "added": ["auth check"],
+    "missing": ["ownership check"]
+  },
+
+  "expectedTests": [
+    {
+      "testId": "004-A",
+      "caseType": "happy",
+      "description": "GET /api/documents/doc-1 with owner's token returns 200",
+      "headers": { "Authorization": "Bearer user-123" },
+      "params": { "id": "doc-1" },
+      "expectedStatus": 200
+    },
+    {
+      "testId": "004-B",
+      "caseType": "edge",
+      "description": "GET /api/documents/doc-1 without token returns 401",
+      "headers": {},
+      "params": { "id": "doc-1" },
+      "expectedStatus": 401
+    },
+    {
+      "testId": "004-C",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "auth-ownership",
+      "description": "GET /api/documents/doc-1 with a different user's token should return 403 — returns 200 (IDOR)",
+      "headers": { "Authorization": "Bearer user-456" },
+      "params": { "id": "doc-1" },
+      "assertExpectedStatus": 403,
+      "actualStatus": 200,
+      "expectedResult": "FAIL"
+    },
+    {
+      "testId": "004-D",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "auth-ownership",
+      "description": "fetchDocument() called without ownership pre-check — service has no guard either",
+      "caller": "after/src/documents/service.ts",
+      "callerFunction": "fetchDocument",
+      "expectedResult": "FAIL"
+    }
+  ],
+
+  "passCriteria": {
+    "upwardDependentsFound": ["after/src/documents/service.ts"],
+    "testsGenerated": ["004-A", "004-B", "004-C", "004-D"],
+    "testsThatMustFail": ["004-C", "004-D"],
+    "bugCaughtVia": "auth check present but ownership check missing — IDOR vulnerability"
+  },
+
+  "failCriteria": [
+    "004-C not generated — cross-user access not tested",
+    "004-C passes — 200 accepted instead of 403",
+    "004-D not generated — service layer ownership gap not detected",
+    "004-D passes — service assumed safe when route has no ownership enforcement"
+  ]
+}

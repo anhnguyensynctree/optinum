@@ -1,0 +1,71 @@
+{
+  "fixture": "fixture-010-migration-drift",
+  "description": "Migration drift: AI adds columns to Prisma schema but never creates migration — DB write fails at runtime",
+  "diffFile": "after/prisma/schema.prisma",
+  "schemaSource": "Prisma — User model",
+
+  "expectedBlastRadius": {
+    "changed": [
+      "after/prisma/schema.prisma",
+      "after/src/services/user.ts",
+      "after/src/api/users/route.ts"
+    ],
+    "dependents": ["after/src/auth/register.ts"],
+    "dependencies": [],
+    "missingArtifact": "after/prisma/migrations/[timestamp]_add_role_plan.sql"
+  },
+
+  "expectedChangeType": "migration-drift",
+
+  "expectedContractDelta": {
+    "removed": [],
+    "added": ["role", "plan"]
+  },
+
+  "expectedTests": [
+    {
+      "testId": "010-A",
+      "caseType": "happy",
+      "description": "POST /api/users with { email, name, role: 'admin', plan: 'pro' } returns 201",
+      "payload": { "email": "alice@example.com", "name": "Alice", "role": "admin", "plan": "pro" },
+      "expectedStatus": 201
+    },
+    {
+      "testId": "010-B",
+      "caseType": "edge",
+      "description": "POST /api/users with missing email returns 400",
+      "payload": { "name": "Alice" },
+      "expectedStatus": 400
+    },
+    {
+      "testId": "010-C",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "migration-drift",
+      "description": "schema.prisma has role/plan columns but no migration file exists in after/prisma/migrations/",
+      "assertMigrationExists": false,
+      "expectedResult": "FAIL"
+    },
+    {
+      "testId": "010-D",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "migration-drift",
+      "description": "registerUser() writes to DB without migration applied — role/plan columns missing at DB level",
+      "caller": "after/src/auth/register.ts",
+      "callerFunction": "registerUser",
+      "assertMigrationApplied": false,
+      "expectedResult": "FAIL"
+    }
+  ],
+
+  "passCriteria": {
+    "upwardDependentsFound": ["after/src/auth/register.ts"],
+    "testsGenerated": ["010-A", "010-B", "010-C", "010-D"],
+    "testsThatMustFail": ["010-C", "010-D"],
+    "bugCaughtVia": "schema changed without migration artifact — DB state drifted"
+  },
+
+  "failCriteria": [
+    "010-C not generated — migration file check missed",
+    "010-D not generated — registerUser caller missed"
+  ]
+}

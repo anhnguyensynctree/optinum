@@ -1,0 +1,9 @@
+// AI added role and plan fields to support RBAC and billing
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  role      String   @default("user")   // ← AI ADDED
+  plan      String   @default("free")   // ← AI ADDED
+  createdAt DateTime @default(now())
+}

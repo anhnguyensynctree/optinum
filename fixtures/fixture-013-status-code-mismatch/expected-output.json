@@ -1,0 +1,83 @@
+{
+  "fixture": "fixture-013-status-code-mismatch",
+  "description": "Status code mismatch: AI changes POST /api/posts from 201 to 200 — callers checking res.status === 201 treat success as failure",
+  "diffFile": "after/src/api/posts/route.ts",
+  "schemaSource": "Zod — CreatePostSchema",
+
+  "expectedBlastRadius": {
+    "changed": ["after/src/api/posts/route.ts"],
+    "dependents": [
+      "after/src/blog/actions.ts",
+      "after/src/cms/publisher.ts"
+    ],
+    "dependencies": []
+  },
+
+  "expectedChangeType": "status-code-mismatch",
+
+  "expectedContractDelta": {
+    "removed": ["status: 201"],
+    "added": ["status: 200 (default)"]
+  },
+
+  "expectedTests": [
+    {
+      "testId": "013-A",
+      "caseType": "happy",
+      "description": "POST /api/posts with valid payload returns 200 (new contract)",
+      "payload": {
+        "title": "Hello World",
+        "content": "First post content",
+        "authorId": "123e4567-e89b-12d3-a456-426614174000"
+      },
+      "expectedStatus": 200
+    },
+    {
+      "testId": "013-B",
+      "caseType": "edge",
+      "description": "POST /api/posts with missing title returns 400",
+      "payload": {
+        "content": "No title here",
+        "authorId": "123e4567-e89b-12d3-a456-426614174000"
+      },
+      "expectedStatus": 400
+    },
+    {
+      "testId": "013-C",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "status-code-mismatch",
+      "description": "createPost() throws 'Post creation failed' because res.status is 200 not 201 — success treated as failure",
+      "caller": "after/src/blog/actions.ts",
+      "callerFunction": "createPost",
+      "assertChecksStatus": 201,
+      "expectedResult": "FAIL"
+    },
+    {
+      "testId": "013-D",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "status-code-mismatch",
+      "description": "publishPost() returns null on success because res.status is 200 not 201 — post silently discarded",
+      "caller": "after/src/cms/publisher.ts",
+      "callerFunction": "publishPost",
+      "assertChecksStatus": 201,
+      "expectedResult": "FAIL"
+    }
+  ],
+
+  "passCriteria": {
+    "upwardDependentsFound": [
+      "after/src/blog/actions.ts",
+      "after/src/cms/publisher.ts"
+    ],
+    "testsGenerated": ["013-A", "013-B", "013-C", "013-D"],
+    "testsThatMustFail": ["013-C", "013-D"],
+    "bugCaughtVia": "HTTP status contract changed in diff — callers check old status code"
+  },
+
+  "failCriteria": [
+    "013-C not generated — upward traversal missed blog/actions.ts",
+    "013-D not generated — upward traversal missed cms/publisher.ts",
+    "013-C passes on broken caller — status assertion wrong",
+    "013-D passes on broken caller — status assertion wrong"
+  ]
+}

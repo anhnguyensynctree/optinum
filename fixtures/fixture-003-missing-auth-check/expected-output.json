@@ -1,0 +1,62 @@
+{
+  "fixture": "fixture-003-missing-auth-check",
+  "description": "Missing auth check: AI adds admin endpoint outside authenticated router group — no middleware applied",
+  "diffFile": "after/src/api/admin/users/route.ts",
+  "schemaSource": "none — new route, no schema validation",
+
+  "expectedBlastRadius": {
+    "changed": ["after/src/api/admin/users/route.ts"],
+    "dependents": ["after/src/api/admin/router.ts"],
+    "dependencies": []
+  },
+
+  "expectedChangeType": "missing-auth-check",
+
+  "expectedContractDelta": {
+    "removed": [],
+    "added": ["GET /api/admin/users (unprotected)"]
+  },
+
+  "expectedTests": [
+    {
+      "testId": "003-A",
+      "caseType": "happy",
+      "description": "GET /api/admin/users with valid admin token returns 200 and user list",
+      "headers": { "Authorization": "Bearer valid-admin-token" },
+      "expectedStatus": 200,
+      "expectedResponseShape": { "users": "array" }
+    },
+    {
+      "testId": "003-B",
+      "caseType": "edge",
+      "description": "GET /api/admin/users without token should return 401 but returns 200 — the bug",
+      "headers": {},
+      "expectedStatus": 401,
+      "actualStatus": 200,
+      "expectedResult": "FAIL"
+    },
+    {
+      "testId": "003-C",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "missing-auth-check",
+      "description": "Route not registered in createAdminRouter — requireAdmin middleware never applied",
+      "caller": "after/src/api/admin/router.ts",
+      "callerFunction": "createAdminRouter",
+      "assertNotSendsField": "GET /api/admin/users in routes[]",
+      "expectedResult": "FAIL"
+    }
+  ],
+
+  "passCriteria": {
+    "upwardDependentsFound": ["after/src/api/admin/router.ts"],
+    "testsGenerated": ["003-A", "003-B", "003-C"],
+    "testsThatMustFail": ["003-B", "003-C"],
+    "bugCaughtVia": "new endpoint not registered in authenticated router — middleware gap"
+  },
+
+  "failCriteria": [
+    "003-B passes — unauthenticated request incorrectly accepted as secure",
+    "003-C not generated — router registration gap not detected",
+    "003-C passes — middleware absence not flagged"
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "fixture": "fixture-005-input-trust",
+  "description": "Input trust boundary: AI sanitizes at HTTP handler but background job calls service directly — bypasses sanitization",
+  "diffFile": "after/src/api/messages/route.ts",
+  "schemaSource": "sanitizeHtml — custom lib",
+
+  "expectedBlastRadius": {
+    "changed": [
+      "after/src/api/messages/route.ts",
+      "after/src/lib/sanitize.ts"
+    ],
+    "dependents": ["after/src/jobs/import-messages.ts"],
+    "dependencies": []
+  },
+
+  "expectedChangeType": "input-trust",
+
+  "expectedContractDelta": {
+    "removed": [],
+    "added": ["sanitizeHtml at HTTP boundary"]
+  },
+
+  "expectedTests": [
+    {
+      "testId": "005-A",
+      "caseType": "happy",
+      "description": "POST /api/messages with XSS content — sanitizeHtml strips script tag, status 200",
+      "payload": {
+        "content": "<script>alert('xss')</script>Hello",
+        "userId": "user-1"
+      },
+      "expectedStatus": 200,
+      "expectedSanitized": true
+    },
+    {
+      "testId": "005-B",
+      "caseType": "edge",
+      "description": "POST /api/messages with empty content returns 400",
+      "payload": { "content": "", "userId": "user-1" },
+      "expectedStatus": 400
+    },
+    {
+      "testId": "005-C",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "input-trust",
+      "description": "importMessagesFromCSV() calls saveMessage() with unsanitized XSS payload — sanitizeHtml never invoked",
+      "caller": "after/src/jobs/import-messages.ts",
+      "callerFunction": "importMessagesFromCSV",
+      "assertCallsSanitize": false,
+      "expectedResult": "FAIL"
+    }
+  ],
+
+  "passCriteria": {
+    "upwardDependentsFound": ["after/src/jobs/import-messages.ts"],
+    "testsGenerated": ["005-A", "005-B", "005-C"],
+    "testsThatMustFail": ["005-C"],
+    "bugCaughtVia": "sanitization only at HTTP boundary — service callers bypass it"
+  },
+
+  "failCriteria": [
+    "005-C not generated — background job not found as service dependent",
+    "005-C passes — sanitization gap not detected in import path"
+  ]
+}

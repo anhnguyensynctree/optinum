@@ -1,0 +1,76 @@
+{
+  "fixture": "fixture-007-cascade-missing",
+  "description": "Cascade missing: AI adds user delete endpoint but never calls deleteUserPosts() or deleteUserComments()",
+  "diffFile": "after/src/api/users/[id]/route.ts",
+  "schemaSource": "none — DELETE operation",
+
+  "expectedBlastRadius": {
+    "changed": ["after/src/api/users/[id]/route.ts"],
+    "dependents": [],
+    "dependencies": [
+      "after/src/services/posts.ts",
+      "after/src/services/comments.ts"
+    ]
+  },
+
+  "expectedChangeType": "cascade-missing",
+
+  "expectedContractDelta": {
+    "removed": [],
+    "added": ["DELETE /api/users/:id"]
+  },
+
+  "expectedTests": [
+    {
+      "testId": "007-A",
+      "caseType": "happy",
+      "description": "DELETE /api/users/user-1 returns 200 with deleted flag and deletedAt timestamp",
+      "payload": { "userId": "user-1" },
+      "expectedStatus": 200
+    },
+    {
+      "testId": "007-B",
+      "caseType": "edge",
+      "description": "DELETE /api/users/nonexistent returns 404",
+      "payload": { "userId": "nonexistent-user" },
+      "expectedStatus": 404
+    },
+    {
+      "testId": "007-C",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "cascade-missing",
+      "description": "After DELETE user-1, GET /api/users/user-1/posts returns orphaned posts — cascade not applied",
+      "caller": "after/src/services/posts.ts",
+      "callerFunction": "getPostsByUser",
+      "assertOrphanedRecords": true,
+      "expectedResult": "FAIL"
+    },
+    {
+      "testId": "007-D",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "cascade-missing",
+      "description": "DELETE handler does not call deleteUserPosts() or deleteUserComments() — cascade functions unused",
+      "assertCallsMissing": ["deleteUserPosts", "deleteUserComments"],
+      "expectedResult": "FAIL"
+    }
+  ],
+
+  "passCriteria": {
+    "upwardDependentsFound": [],
+    "downwardDependenciesFound": [
+      "after/src/services/posts.ts",
+      "after/src/services/comments.ts"
+    ],
+    "testsGenerated": ["007-A", "007-B", "007-C", "007-D"],
+    "testsThatMustFail": ["007-C", "007-D"],
+    "bugCaughtVia": "downward dependency — cascade functions exist but not called"
+  },
+
+  "failCriteria": [
+    "007-C not generated — downward traversal missed services/posts.ts",
+    "007-D not generated — downward traversal missed services/comments.ts",
+    "007-C passes — orphaned record check not performed",
+    "007-D passes on broken handler — missing call assertion wrong",
+    "blast radius only checks upward — downward gap not detected"
+  ]
+}

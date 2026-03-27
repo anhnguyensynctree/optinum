@@ -1,0 +1,93 @@
+{
+  "fixture": "fixture-014-error-swallowed",
+  "description": "Error swallowed: AI adds try/catch in sendEmail() that swallows errors — callers never know email failed",
+  "diffFile": "after/src/services/email.ts",
+  "schemaSource": "none — service function return type: Promise<void>",
+  "expectedBlastRadius": {
+    "changed": ["after/src/services/email.ts"],
+    "dependents": [
+      "after/src/api/orders/[id]/confirm/route.ts",
+      "after/src/jobs/welcome.ts"
+    ],
+    "dependencies": []
+  },
+  "expectedChangeType": "error-swallowed",
+  "expectedContractDelta": {
+    "removed": ["throws on failure"],
+    "added": ["swallows error silently"]
+  },
+  "expectedTests": [
+    {
+      "testId": "014-A",
+      "caseType": "happy",
+      "description": "sendEmail with valid params; email provider returns 200; resolves without throwing",
+      "payload": {
+        "to": "user@example.com",
+        "subject": "Test",
+        "body": "Hello",
+        "mockResponseStatus": 200
+      },
+      "expectedStatus": 200
+    },
+    {
+      "testId": "014-B",
+      "caseType": "edge",
+      "description": "sendEmail when provider returns 500; SHOULD throw but does NOT in after/ version; error is swallowed",
+      "payload": {
+        "to": "user@example.com",
+        "subject": "Test",
+        "body": "Hello",
+        "mockResponseStatus": 500
+      },
+      "expectedStatus": 500,
+      "assertThrows": false,
+      "note": "In before/, this throws. In after/, it swallows — callers cannot detect failure."
+    },
+    {
+      "testId": "014-C",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "error-swallowed-caller-expects-throw",
+      "description": "POST /api/orders/order-1/confirm when email provider fails; response should be 500 but is 200 { confirmed: true } because sendEmail no longer throws",
+      "caller": "after/src/api/orders/[id]/confirm/route.ts",
+      "callerFunction": "POST",
+      "payload": {
+        "orderId": "order-1",
+        "mockEmailProviderStatus": 500
+      },
+      "assertErrorPropagated": false,
+      "expectedResult": "FAIL",
+      "expectedBehavior": "returns 200 { confirmed: true } instead of 500 { error: 'Failed to send confirmation email' }"
+    },
+    {
+      "testId": "014-D",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "error-swallowed-boolean-return-always-true",
+      "description": "sendWelcomeEmail() returns true when email fails; catch block is dead code; caller cannot detect failure",
+      "caller": "after/src/jobs/welcome.ts",
+      "callerFunction": "sendWelcomeEmail",
+      "payload": {
+        "userId": "user-1",
+        "email": "user@example.com",
+        "mockEmailProviderStatus": 500
+      },
+      "assertErrorPropagated": false,
+      "expectedResult": "FAIL",
+      "expectedBehavior": "returns true instead of false when email delivery fails"
+    }
+  ],
+  "passCriteria": {
+    "upwardDependentsFound": [
+      "after/src/api/orders/[id]/confirm/route.ts",
+      "after/src/jobs/welcome.ts"
+    ],
+    "testsGenerated": ["014-A", "014-B", "014-C", "014-D"],
+    "testsThatMustFail": ["014-C", "014-D"],
+    "bugCaughtVia": "error contract changed — function no longer throws, callers assume it does"
+  },
+  "failCriteria": [
+    "014-C not generated — blast radius traversal missed confirm/route.ts",
+    "014-D not generated — blast radius traversal missed jobs/welcome.ts",
+    "014-C passes when error is swallowed (tool incorrectly reports 500 response)",
+    "014-D passes when error is swallowed (tool incorrectly reports false return)"
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "fixture": "fixture-008-event-not-emitted",
+  "description": "Event not emitted: AI refactors order status handler but drops emitEvent() call — downstream notifications never fire",
+  "diffFile": "after/src/api/orders/[id]/status/route.ts",
+  "schemaSource": "none — PATCH operation",
+
+  "expectedBlastRadius": {
+    "changed": ["after/src/api/orders/[id]/status/route.ts"],
+    "dependents": ["after/src/notifications/handler.ts"],
+    "dependencies": ["after/src/lib/events.ts"]
+  },
+
+  "expectedChangeType": "event-not-emitted",
+
+  "expectedContractDelta": {
+    "removed": ["emitEvent(OrderStatusChanged)"],
+    "added": []
+  },
+
+  "expectedTests": [
+    {
+      "testId": "008-A",
+      "caseType": "happy",
+      "description": "PATCH /api/orders/order-1/status { status: 'shipped' } returns 200 with updated order",
+      "payload": { "status": "shipped" },
+      "expectedStatus": 200
+    },
+    {
+      "testId": "008-B",
+      "caseType": "edge",
+      "description": "PATCH with missing status field returns 400",
+      "payload": {},
+      "expectedStatus": 400
+    },
+    {
+      "testId": "008-C",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "event-not-emitted",
+      "description": "After PATCH to 'shipped', onOrderStatusChanged is never called because OrderStatusChanged event is not emitted",
+      "caller": "after/src/notifications/handler.ts",
+      "callerFunction": "onOrderStatusChanged",
+      "assertEventEmitted": "OrderStatusChanged",
+      "expectedResult": "FAIL"
+    },
+    {
+      "testId": "008-D",
+      "caseType": "ai-blind-spot",
+      "blindSpotPattern": "event-not-emitted",
+      "description": "emitEvent not called in updated PATCH handler — event contract removed from diff",
+      "assertCallsMissing": ["emitEvent"],
+      "expectedResult": "FAIL"
+    }
+  ],
+
+  "passCriteria": {
+    "upwardDependentsFound": ["after/src/notifications/handler.ts"],
+    "downwardDependenciesFound": ["after/src/lib/events.ts"],
+    "testsGenerated": ["008-A", "008-B", "008-C", "008-D"],
+    "testsThatMustFail": ["008-C", "008-D"],
+    "bugCaughtVia": "event contract removed from diff — downstream consumers not in diff"
+  },
+
+  "failCriteria": [
+    "008-C not generated — event consumer traversal missed notifications/handler.ts",
+    "008-D not generated — emitEvent removal not detected in diff",
+    "008-C passes — event emission assertion wrong",
+    "008-D passes on broken handler — missing call assertion wrong",
+    "contract delta did not flag emitEvent removal"
+  ]
+}
