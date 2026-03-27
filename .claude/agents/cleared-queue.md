@@ -642,7 +642,7 @@
 
 ## TASK-023
 **Title:** OSS Evidence Collection (5 Seed Repos)
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-016
 **Milestone:** Validated & Shareable
 **Departments:** [engineering, qa]
@@ -846,7 +846,7 @@
 
 ## TASK-030
 **Title:** Three-Loop Self-Validation — Outer Loop (metamorphic relations)
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-020
 **Milestone:** Validated & Shareable
 **Departments:** [engineering, qa]

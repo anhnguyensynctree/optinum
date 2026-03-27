@@ -1,0 +1,93 @@
+name: Regression Suite — CI Gate
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  regression-suite:
+    name: Run full regression suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run fixture harness
+        run: node --require tsx/cjs --test src/fixtures/harness.test.ts
+
+      - name: Run quality gate + outer loop MRs
+        id: regression
+        run: |
+          node --require tsx/cjs --input-type=module << 'EOF'
+          import { runRegressionSuite } from "./src/ci/regression-runner.js";
+          import * as path from "path";
+          import * as fs from "fs";
+
+          const fixturesDir = path.resolve("fixtures");
+          const result = await runRegressionSuite(fixturesDir);
+
+          console.log("=".repeat(70));
+          console.log(result.summary);
+          console.log("=".repeat(70));
+
+          // Write outputs for the comment step
+          const output = process.env.GITHUB_OUTPUT ?? "";
+          if (output) {
+            const summary = result.summary.replace(/\n/g, "%0A");
+            fs.appendFileSync(output, `passed=${result.passed}\n`);
+            fs.appendFileSync(output, `catch_rate=${result.qualityGate.catchRate}\n`);
+            fs.appendFileSync(output, `structural_validity=${result.qualityGate.structuralValidity}\n`);
+            fs.appendFileSync(output, `violations=${result.outerLoop.violations.length}\n`);
+            fs.appendFileSync(output, `summary=${summary}\n`);
+          }
+
+          if (!result.passed) {
+            process.exit(1);
+          }
+          EOF
+
+      - name: Post regression report as PR comment
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const passed = '${{ steps.regression.outputs.passed }}' === 'true';
+            const catchRate = parseFloat('${{ steps.regression.outputs.catch_rate }}' || '0');
+            const structuralValidity = parseFloat('${{ steps.regression.outputs.structural_validity }}' || '0');
+            const violations = parseInt('${{ steps.regression.outputs.violations }}' || '0');
+            const summary = '${{ steps.regression.outputs.summary }}'.replace(/%0A/g, '\n');
+
+            const status = passed ? '✅ PASS' : '❌ FAIL';
+            const catchPct = (catchRate * 100).toFixed(1);
+            const structPct = (structuralValidity * 100).toFixed(1);
+
+            const body = [
+              `## Optinum Regression Suite — ${status}`,
+              '',
+              '| Metric | Value | Threshold |',
+              '|--------|-------|-----------|',
+              `| Catch rate | ${catchPct}% | ≥ 80% |`,
+              `| Structural validity | ${structPct}% | 100% |`,
+              `| MR violations | ${violations} | 0 |`,
+              '',
+              '```',
+              summary || '(no summary available)',
+              '```',
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });

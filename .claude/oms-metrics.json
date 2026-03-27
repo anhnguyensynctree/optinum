@@ -187,5 +187,23 @@
     "passed": true,
     "fail_at": null,
     "cost_usd": null
+  },
+  {
+    "task_id": "TASK-026",
+    "slug": "optinum",
+    "title": "Regression Suite CI Gate",
+    "date": "2026-03-27T19:50:09.966464Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
+  },
+  {
+    "task_id": "TASK-010",
+    "slug": "optinum",
+    "title": "Synthesis Quality Gate",
+    "date": "2026-03-27T19:50:21.946590Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
   }
 ]

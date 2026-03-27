@@ -122,6 +122,28 @@ export const ExpansionCandidateSchema = z.object({
 });
 export type ExpansionCandidate = z.infer<typeof ExpansionCandidateSchema>;
 
+// Per-fixture quality gate result
+export const PerFixtureResultSchema = z.object({
+  fixture: z.string(),
+  caught: z.boolean(),
+  structurallyValid: z.boolean(),
+  expectedTestCount: z.number().int().nonnegative(),
+  generatedTestCount: z.number().int().nonnegative(),
+  missedTestIds: z.array(z.string()),
+});
+export type PerFixtureResult = z.infer<typeof PerFixtureResultSchema>;
+
+// Quality gate aggregate result
+export const QualityGateResultSchema = z.object({
+  catchRate: z.number().min(0).max(1),
+  falsePositiveRate: z.number().min(0).max(1),
+  structuralValidity: z.number().min(0).max(1),
+  passed: z.boolean(),
+  perFixture: z.array(PerFixtureResultSchema),
+  failReasons: z.array(z.string()),
+});
+export type QualityGateResult = z.infer<typeof QualityGateResultSchema>;
+
 // Full pipeline result
 export const PipelineResultSchema = z.object({
   tests: z.array(SynthesizedTestSchema),
