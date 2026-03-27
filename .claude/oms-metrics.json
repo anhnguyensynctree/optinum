@@ -79,5 +79,23 @@
     "passed": true,
     "fail_at": null,
     "cost_usd": null
+  },
+  {
+    "task_id": "TASK-025",
+    "slug": "optinum",
+    "title": "Catalog Pending to Approved Flow",
+    "date": "2026-03-27T06:58:43.280990Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
+  },
+  {
+    "task_id": "TASK-015",
+    "slug": "optinum",
+    "title": "ChangeClassifier Module",
+    "date": "2026-03-27T06:58:53.105414Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
   }
 ]
