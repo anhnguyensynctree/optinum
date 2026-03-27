@@ -286,5 +286,14 @@
     "passed": true,
     "fail_at": null,
     "cost_usd": null
+  },
+  {
+    "task_id": "TASK-033",
+    "slug": "optinum",
+    "title": "AI-vs-AI Evidence: Prove AI Unit Tests Miss AI Code Bugs",
+    "date": "2026-03-27T23:57:51.514264Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
   }
 ]
