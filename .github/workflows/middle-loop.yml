@@ -1,0 +1,115 @@
+name: Middle Loop — Weekly Mutation Testing
+
+on:
+  schedule:
+    - cron: "0 2 * * 0"
+  workflow_dispatch:
+
+jobs:
+  middle-loop:
+    name: Run StrykerJS adversarial mutation testing
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run StrykerJS
+        run: npx stryker run
+        env:
+          CI: "true"
+
+      - name: Run middle loop score tracker
+        id: middle
+        run: |
+          node --require tsx/cjs --input-type=module << 'EOF'
+          import { runMiddleLoop } from "./src/ci/middle-loop.js";
+          import * as fs from "fs";
+
+          const reportPath = "reports/mutation/mutation-report.json";
+          const scoresPath = "benchmark/mutation-scores.json";
+
+          const result = await runMiddleLoop({
+            mutationReportPath: reportPath,
+            scoresPath,
+            version: process.env.GITHUB_SHA ?? "unknown",
+          });
+
+          const summary = [
+            `Mutation score: ${(result.score * 100).toFixed(1)}%`,
+            `Killed: ${result.killed} | Survived: ${result.survived}`,
+            result.delta !== null
+              ? `Delta: ${result.delta >= 0 ? "+" : ""}${(result.delta * 100).toFixed(1)}%`
+              : "Delta: N/A (first run)",
+            result.regression
+              ? `REGRESSION: score dropped from ${((result.score - result.delta) * 100).toFixed(1)}% to ${(result.score * 100).toFixed(1)}%`
+              : "",
+          ]
+            .filter(Boolean)
+            .join("\n");
+
+          console.log("=".repeat(70));
+          console.log(summary);
+          console.log("=".repeat(70));
+
+          const output = process.env.GITHUB_OUTPUT ?? "";
+          if (output) {
+            const escapedSummary = summary.replace(/\n/g, "%0A");
+            fs.appendFileSync(output, `score=${result.score}\n`);
+            fs.appendFileSync(output, `killed=${result.killed}\n`);
+            fs.appendFileSync(output, `survived=${result.survived}\n`);
+            fs.appendFileSync(output, `regression=${result.regression}\n`);
+            fs.appendFileSync(output, `delta=${result.delta ?? ""}\n`);
+            fs.appendFileSync(output, `summary=${escapedSummary}\n`);
+          }
+
+          const stepSummaryPath = process.env.GITHUB_STEP_SUMMARY ?? "";
+          if (stepSummaryPath) {
+            const score = (result.score * 100).toFixed(1);
+            const deltaStr = result.delta !== null
+              ? `${result.delta >= 0 ? "+" : ""}${(result.delta * 100).toFixed(1)}%`
+              : "N/A";
+            const status = result.regression ? "REGRESSION" : "OK";
+
+            const md = [
+              "## Optinum Middle Loop — Mutation Score",
+              "",
+              "| Metric | Value |",
+              "|--------|-------|",
+              `| Mutation score | ${score}% |`,
+              `| Killed | ${result.killed} |`,
+              `| Survived | ${result.survived} |`,
+              `| Delta | ${deltaStr} |`,
+              `| Status | ${status} |`,
+              "",
+              "```",
+              summary,
+              "```",
+            ].join("\n");
+
+            fs.appendFileSync(stepSummaryPath, md + "\n");
+          }
+          EOF
+
+      - name: Upload mutation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-report
+          path: reports/mutation/
+          retention-days: 30
+
+      - name: Upload scores file
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-scores
+          path: benchmark/mutation-scores.json
+          retention-days: 90
