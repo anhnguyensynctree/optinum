@@ -115,5 +115,23 @@
     "passed": true,
     "fail_at": null,
     "cost_usd": null
+  },
+  {
+    "task_id": "TASK-006",
+    "slug": "optinum",
+    "title": "TestSynthesizer \u2014 Core Synthesis (Layer 1)",
+    "date": "2026-03-27T18:11:09.278782Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
+  },
+  {
+    "task_id": "TASK-016",
+    "slug": "optinum",
+    "title": "OSS Benchmark Runner",
+    "date": "2026-03-27T18:11:39.328332Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
   }
 ]

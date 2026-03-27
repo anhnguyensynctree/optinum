@@ -32,7 +32,7 @@
 
 ## TASK-002
 **Title:** ASTParser — TypeScript (ts-morph bidirectional traversal)
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-002
 **Milestone:** MVP: CLI Proof of Concept on TypeScript + Python
 **Departments:** [engineering]
@@ -60,7 +60,7 @@
 
 ## TASK-003
 **Title:** ASTParser — Python (ast + libcst bidirectional traversal)
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-002
 **Milestone:** MVP: CLI Proof of Concept on TypeScript + Python
 **Departments:** [engineering]
@@ -88,7 +88,7 @@
 
 ## TASK-004
 **Title:** SchemaDetector — TypeScript (Zod → interfaces → OpenAPI)
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-003
 **Milestone:** MVP: CLI Proof of Concept on TypeScript + Python
 **Departments:** [engineering]
@@ -116,7 +116,7 @@
 
 ## TASK-005
 **Title:** SchemaDetector — Python (Pydantic → OpenAPI)
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-003
 **Milestone:** MVP: CLI Proof of Concept on TypeScript + Python
 **Departments:** [engineering]
@@ -406,7 +406,7 @@
 
 ## TASK-015
 **Title:** ChangeClassifier Module
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-009
 **Milestone:** MVP: CLI Proof of Concept on TypeScript + Python
 **Departments:** [engineering]
@@ -495,7 +495,7 @@
 
 ## TASK-018
 **Title:** Coverage Trust Report Generator
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-011
 **Milestone:** MVP: CLI Proof of Concept on TypeScript + Python
 **Departments:** [engineering, qa]
@@ -526,7 +526,7 @@
 
 ## TASK-019
 **Title:** Unit Test Gap Analyzer
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-012
 **Milestone:** MVP: CLI Proof of Concept on TypeScript + Python
 **Departments:** [engineering, qa]
@@ -671,7 +671,7 @@
 
 ## TASK-024
 **Title:** `optinum catalog add` Command
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-017
 **Milestone:** Validated & Shareable
 **Departments:** [engineering]
@@ -699,7 +699,7 @@
 
 ## TASK-025
 **Title:** Catalog Pending → Approved Flow
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-017
 **Milestone:** Validated & Shareable
 **Departments:** [engineering, qa]
@@ -877,7 +877,7 @@
 
 ## TASK-031
 **Title:** Fixture Catalog Completeness Check
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-021
 **Milestone:** MVP: CLI Proof of Concept on TypeScript + Python
 **Departments:** [engineering, qa]

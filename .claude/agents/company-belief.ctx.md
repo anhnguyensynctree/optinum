@@ -31,6 +31,11 @@ Deferred — prove the method first, decide how to sell it after.
 
 Current stance: let people try 1-2 full synthesis runs (local trial counter, no infrastructure). Gap analysis + blind spot report is always free. Subscription model, pricing, and tiers are decided after FEATURE-006 validates the method works.
 
+## Synthesizer Independence — Core Principle
+The synthesizer is an independent observer, adversarially isolated from the developer session by design. It only receives the deterministic pipeline outputs: `blastRadius`, `contracts`, `changeTypes`, and blind spot catalog entries for those types. It never receives implementation code, PR description, commit message, or any session context from the developer's Claude Code session.
+
+This independence is the mechanism of detection — if the synthesizer runs inside the same session that wrote the code, it shares the same assumptions and misses the same blind spots. Less context is a feature, not a bug. `claude --print` subprocess (fresh context) is the correct primary synthesis path for this reason.
+
 ## Strategic Constraints
 - Developer experience is the north star — zero friction to adopt, integrates into existing CI
 - Non-traditional methodology: we are not replacing unit tests or E2E suites, we are adding a new primitive

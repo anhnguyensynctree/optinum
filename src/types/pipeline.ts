@@ -86,6 +86,20 @@ export const PipelineErrorSchema = z.object({
 });
 export type PipelineError = z.infer<typeof PipelineErrorSchema>;
 
+// OSS benchmark record for a single commit
+export const BenchmarkRecordSchema = z.object({
+  repo: z.string(),
+  commitSha: z.string(),
+  commitMessage: z.string(),
+  changedFiles: z.array(z.string()),
+  changeTypes: z.array(ChangeTypeSchema),
+  blindSpotsDetected: z.array(z.string()),
+  laterFixCommit: z.null(),
+  bugSignal: z.null(),
+  timestamp: z.string(),
+});
+export type BenchmarkRecord = z.infer<typeof BenchmarkRecordSchema>;
+
 // Full pipeline result
 export const PipelineResultSchema = z.object({
   tests: z.array(SynthesizedTestSchema),
