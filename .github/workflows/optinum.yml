@@ -1,0 +1,126 @@
+name: Optinum — Synthesize Tests
+
+on:
+  pull_request:
+    branches:
+      - master
+
+inputs:
+  fail-on-threshold:
+    description: "Block PR if synthesis produces zero tests"
+    required: false
+    default: "false"
+
+jobs:
+  synthesize-tests:
+    name: Synthesize tests for changed files
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check ANTHROPIC_API_KEY
+        run: |
+          if [ -z "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
+            echo "::warning::ANTHROPIC_API_KEY is not set. Synthesis will run in --llm cli mode (local)."
+            echo "To enable cloud LLM synthesis, add ANTHROPIC_API_KEY to your repository secrets."
+          fi
+
+      - name: Generate diff file
+        id: diff
+        run: |
+          git diff origin/${{ github.base_ref }}...HEAD -- '*.ts' '*.tsx' > /tmp/pr.diff
+          if [ ! -s /tmp/pr.diff ]; then
+            echo "no_ts_changes=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "no_ts_changes=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run optinum test
+        if: steps.diff.outputs.no_ts_changes == 'false'
+        id: optinum
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          set +e
+          OUTPUT=$(npx optinum test --diff /tmp/pr.diff --dry-run 2>&1)
+          EXIT_CODE=$?
+          set -e
+
+          echo "exit_code=${EXIT_CODE}" >> "$GITHUB_OUTPUT"
+
+          # Escape for multiline GITHUB_OUTPUT
+          ESCAPED="${OUTPUT//'%'/'%25'}"
+          ESCAPED="${ESCAPED//$'\n'/'%0A'}"
+          ESCAPED="${ESCAPED//$'\r'/'%0D'}"
+          echo "result=${ESCAPED}" >> "$GITHUB_OUTPUT"
+
+          # Extract test count from summary line e.g. "5 tests generated (...)"
+          COUNT=$(echo "$OUTPUT" | grep -oE '^[0-9]+' | head -1 || echo "0")
+          echo "test_count=${COUNT}" >> "$GITHUB_OUTPUT"
+
+      - name: Post synthesis report as PR comment
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const noTsChanges = '${{ steps.diff.outputs.no_ts_changes }}' === 'true';
+            const exitCode    = parseInt('${{ steps.optinum.outputs.exit_code }}' || '0');
+            const result      = '${{ steps.optinum.outputs.result }}'.replace(/%0A/g, '\n').replace(/%0D/g, '\r').replace(/%25/g, '%');
+            const testCount   = parseInt('${{ steps.optinum.outputs.test_count }}' || '0');
+            const failOnThreshold = '${{ inputs.fail-on-threshold }}' === 'true';
+
+            let status, summary;
+
+            if (noTsChanges) {
+              status  = '⏭️ SKIPPED';
+              summary = 'No TypeScript files changed in this PR — nothing to synthesize.';
+            } else if (exitCode !== 0) {
+              status  = '❌ ERROR';
+              summary = 'Synthesis encountered an error.';
+            } else {
+              status  = '✅ PASS';
+              summary = `${testCount} test(s) synthesized.`;
+            }
+
+            const body = [
+              `## Optinum Test Synthesis — ${status}`,
+              '',
+              summary,
+              '',
+              '<details>',
+              '<summary>Full synthesis output</summary>',
+              '',
+              '```',
+              result || '(no output)',
+              '```',
+              '',
+              '</details>',
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+
+      - name: Fail if threshold not met
+        if: steps.diff.outputs.no_ts_changes == 'false' && inputs.fail-on-threshold == 'true'
+        run: |
+          COUNT="${{ steps.optinum.outputs.test_count }}"
+          if [ "${COUNT}" = "0" ] || [ -z "${COUNT}" ]; then
+            echo "::error::fail-on-threshold is enabled and no tests were synthesized."
+            exit 1
+          fi

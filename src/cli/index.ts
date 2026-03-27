@@ -1,4 +1,5 @@
 import { runTestCommand } from "./commands/test";
+import { runInit } from "./commands/init";
 
 const args = process.argv.slice(2);
 const subcommand = args[0];
@@ -26,6 +27,7 @@ async function main(): Promise<void> {
     console.log("Usage: optinum <command> [options]");
     console.log("");
     console.log("Commands:");
+    console.log("  init       Auto-detect project and write optinum.config.ts");
     console.log("  test       Generate tests from a diff");
     console.log("  benchmark  Run against OSS benchmark fixtures");
     console.log("  catalog    Manage the blind-spot pattern catalog");
@@ -35,6 +37,9 @@ async function main(): Promise<void> {
   const flags = parseFlags(args.slice(1));
 
   switch (subcommand) {
+    case "init":
+      await runInit(process.cwd());
+      break;
     case "test":
       await runTestCommand(flags);
       break;

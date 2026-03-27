@@ -288,7 +288,7 @@
 
 ## TASK-011
 **Title:** CLI — `optinum test` command
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-007
 **Milestone:** MVP: CLI Proof of Concept on TypeScript + Python
 **Departments:** [engineering]
@@ -787,7 +787,7 @@
 
 ## TASK-028
 **Title:** Three-Loop Self-Validation — Inner Loop (per-PR CI)
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-020
 **Milestone:** Validated & Shareable
 **Departments:** [engineering, qa]

@@ -223,5 +223,41 @@
     "passed": true,
     "fail_at": null,
     "cost_usd": null
+  },
+  {
+    "task_id": "TASK-020",
+    "slug": "optinum",
+    "title": "Trial Run Counter",
+    "date": "2026-03-27T20:02:19.749625Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
+  },
+  {
+    "task_id": "TASK-012",
+    "slug": "optinum",
+    "title": "CLI Output Formatter",
+    "date": "2026-03-27T20:02:21.104188Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
+  },
+  {
+    "task_id": "TASK-013",
+    "slug": "optinum",
+    "title": "GitHub Action Wrapper",
+    "date": "2026-03-27T20:02:28.363373Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
+  },
+  {
+    "task_id": "TASK-021",
+    "slug": "optinum",
+    "title": "optinum init command + config schema",
+    "date": "2026-03-27T20:03:20.914600Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
   }
 ]

@@ -1,0 +1,153 @@
+name: Optinum Test Synthesis
+description: Synthesize tests for TypeScript changes in a pull request using optinum
+author: optinum
+
+inputs:
+  anthropic-api-key:
+    description: >
+      Anthropic API key for cloud LLM synthesis. Required for --llm api mode.
+      When omitted, synthesis runs in --llm cli mode (local, no API call).
+    required: true
+
+  openapi-spec-path:
+    description: >
+      Path to an OpenAPI spec file (.json or .yaml) to seed contract detection.
+      When provided, optinum uses it to infer expected endpoints and schemas.
+    required: false
+    default: ""
+
+  fail-on-threshold:
+    description: >
+      Block the PR (exit 1) when synthesis produces zero tests for changed files.
+      Useful as a quality gate on PRs that touch API routes or service logic.
+    required: false
+    default: "false"
+
+  runner:
+    description: >
+      Test runner format for the generated test file. One of: jest | vitest.
+      Determines the import style and globals in the output file.
+    required: false
+    default: "jest"
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+        cache: "npm"
+
+    - name: Install optinum dependencies
+      shell: bash
+      run: npm ci
+
+    - name: Check ANTHROPIC_API_KEY
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.anthropic-api-key }}" ]; then
+          echo "::warning::anthropic-api-key input is empty. Synthesis will run in --llm cli mode."
+          echo "To enable cloud LLM synthesis, pass the ANTHROPIC_API_KEY secret as the anthropic-api-key input."
+        fi
+
+    - name: Generate diff from base branch
+      id: diff
+      shell: bash
+      run: |
+        git diff origin/${{ github.base_ref }}...HEAD -- '*.ts' '*.tsx' > /tmp/pr.diff
+        if [ ! -s /tmp/pr.diff ]; then
+          echo "no_ts_changes=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "no_ts_changes=false" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Run optinum test
+      if: steps.diff.outputs.no_ts_changes == 'false'
+      id: optinum
+      shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+      run: |
+        set +e
+        EXTRA_FLAGS=""
+        if [ -n "${{ inputs.openapi-spec-path }}" ]; then
+          EXTRA_FLAGS="--openapi ${{ inputs.openapi-spec-path }}"
+        fi
+
+        OUTPUT=$(npx optinum test \
+          --diff /tmp/pr.diff \
+          --runner ${{ inputs.runner }} \
+          --dry-run \
+          ${EXTRA_FLAGS} 2>&1)
+        EXIT_CODE=$?
+        set -e
+
+        echo "exit_code=${EXIT_CODE}" >> "$GITHUB_OUTPUT"
+
+        ESCAPED="${OUTPUT//'%'/'%25'}"
+        ESCAPED="${ESCAPED//$'\n'/'%0A'}"
+        ESCAPED="${ESCAPED//$'\r'/'%0D'}"
+        echo "result=${ESCAPED}" >> "$GITHUB_OUTPUT"
+
+        COUNT=$(echo "$OUTPUT" | grep -oE '^[0-9]+' | head -1 || echo "0")
+        echo "test_count=${COUNT}" >> "$GITHUB_OUTPUT"
+
+    - name: Post synthesis report as PR comment
+      if: always() && github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ github.token }}
+        script: |
+          const noTsChanges = '${{ steps.diff.outputs.no_ts_changes }}' === 'true';
+          const exitCode    = parseInt('${{ steps.optinum.outputs.exit_code }}' || '0');
+          const result      = '${{ steps.optinum.outputs.result }}'.replace(/%0A/g, '\n').replace(/%0D/g, '\r').replace(/%25/g, '%');
+          const testCount   = parseInt('${{ steps.optinum.outputs.test_count }}' || '0');
+
+          let status, summary;
+
+          if (noTsChanges) {
+            status  = '⏭️ SKIPPED';
+            summary = 'No TypeScript files changed in this PR — nothing to synthesize.';
+          } else if (exitCode !== 0) {
+            status  = '❌ ERROR';
+            summary = 'Synthesis encountered an error.';
+          } else {
+            status  = '✅ PASS';
+            summary = `${testCount} test(s) synthesized.`;
+          }
+
+          const body = [
+            `## Optinum Test Synthesis — ${status}`,
+            '',
+            summary,
+            '',
+            '<details>',
+            '<summary>Full synthesis output</summary>',
+            '',
+            '```',
+            result || '(no output)',
+            '```',
+            '',
+            '</details>',
+          ].join('\n');
+
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo:  context.repo.repo,
+            issue_number: context.issue.number,
+            body,
+          });
+
+    - name: Fail if threshold not met
+      if: steps.diff.outputs.no_ts_changes == 'false' && inputs.fail-on-threshold == 'true'
+      shell: bash
+      run: |
+        COUNT="${{ steps.optinum.outputs.test_count }}"
+        if [ "${COUNT}" = "0" ] || [ -z "${COUNT}" ]; then
+          echo "::error::fail-on-threshold is enabled and no tests were synthesized."
+          exit 1
+        fi
+
+branding:
+  icon: zap
+  color: blue
