@@ -156,7 +156,13 @@ test("cli mode: succeeds on first retry after initial parse failure", async () =
 
   assert.equal(result.error, null, "Should succeed on second attempt");
   assert.ok(result.tests.length >= 1, "Should have tests after retry");
-  assert.equal(callCount, 2, "Should have called runner twice");
+  // Layer 1: call 1 fails (parse error), call 2 succeeds. Layer 2 also runs (contract-change
+  // has catalog entries), making a third call. Total = 3.
+  assert.equal(
+    callCount,
+    3,
+    "Should have called runner 3 times (L1 fail, L1 retry, L2)",
+  );
 });
 
 test("api mode: happy path via _apiRunner mock returns tests", async () => {

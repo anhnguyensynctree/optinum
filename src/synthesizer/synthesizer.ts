@@ -12,6 +12,7 @@ import {
 import { queryByChangeType } from "../catalog/catalog";
 import type { CatalogPattern } from "../catalog/catalog";
 import { buildLayer1Prompt } from "./prompts/layer1";
+import { buildLayer2Prompt } from "./prompts/layer2";
 import { withRetry, RetryExhaustedError } from "./retry";
 
 export type SynthesisMode = "cli" | "api";
@@ -23,8 +24,8 @@ export interface SynthesizeInput {
   mode?: SynthesisMode;
   /** Injectable for testing — overrides subprocess call in cli mode */
   _cliRunner?: (prompt: string) => string;
-  /** Injectable for testing — overrides API call in api mode */
-  _apiRunner?: (prompt: string) => Promise<string>;
+  /** Injectable for testing — overrides API call in api mode (attempt=1 uses Opus, attempt>1 uses Haiku) */
+  _apiRunner?: (prompt: string, model: string) => Promise<string>;
 }
 
 export interface SynthesizeResult {
@@ -73,10 +74,16 @@ function defaultCliRunner(prompt: string): string {
   }) as string;
 }
 
-async function defaultApiRunner(prompt: string): Promise<string> {
+export const SYNTHESIZER_PRIMARY_MODEL = "claude-opus-4-5";
+export const SYNTHESIZER_RETRY_MODEL = "claude-haiku-4-5";
+
+async function defaultApiRunner(
+  prompt: string,
+  model: string,
+): Promise<string> {
   const client = new Anthropic();
   const message = await client.messages.create({
-    model: "claude-opus-4-5",
+    model,
     max_tokens: 4096,
     messages: [{ role: "user", content: prompt }],
   });
@@ -86,6 +93,21 @@ async function defaultApiRunner(prompt: string): Promise<string> {
     throw new Error(`Unexpected content type from API: ${content.type}`);
   }
   return content.text;
+}
+
+function buildInvoker(
+  mode: SynthesisMode,
+  prompt: string,
+  cliRunner: (p: string) => string,
+  apiRunner: (p: string, model: string) => Promise<string>,
+): (attempt: number) => Promise<SynthesizedTest[]> {
+  return async (attempt: number) => {
+    const model =
+      attempt === 1 ? SYNTHESIZER_PRIMARY_MODEL : SYNTHESIZER_RETRY_MODEL;
+    const raw =
+      mode === "api" ? await apiRunner(prompt, model) : cliRunner(prompt);
+    return parseAndValidate(raw);
+  };
 }
 
 export async function synthesizeTests(
@@ -101,25 +123,24 @@ export async function synthesizeTests(
   } = input;
 
   const catalogEntries = getCatalogEntries(changeTypes);
-  const prompt = buildLayer1Prompt({
+
+  // Layer 1 — standard tests
+  const layer1Prompt = buildLayer1Prompt({
     blastRadius,
     contracts,
     changeTypes,
     catalogEntries,
   });
 
-  const invoke = async (): Promise<SynthesizedTest[]> => {
-    const raw = mode === "api" ? await _apiRunner(prompt) : _cliRunner(prompt);
-    return parseAndValidate(raw);
-  };
-
+  let layer1Tests: SynthesizedTest[];
   try {
-    const tests = await withRetry(invoke, 2);
-    return { tests, error: null };
+    layer1Tests = await withRetry(
+      buildInvoker(mode, layer1Prompt, _cliRunner, _apiRunner),
+      2,
+    );
   } catch (err) {
     const retries = err instanceof RetryExhaustedError ? err.attempts - 1 : 0;
     const lastOutput = err instanceof RetryExhaustedError ? err.lastError : err;
-
     const pipelineError: PipelineError = {
       stage: "synthesizer",
       message: err instanceof Error ? err.message : String(err),
@@ -128,4 +149,37 @@ export async function synthesizeTests(
     };
     return { tests: [], error: pipelineError };
   }
+
+  // Layer 2 — blind spot tests (only when catalog entries exist)
+  if (catalogEntries.length === 0) {
+    console.log("no-catalog-entry: skipping Layer 2 synthesis");
+    return { tests: layer1Tests, error: null };
+  }
+
+  const layer2Prompt = buildLayer2Prompt({
+    blastRadius,
+    contracts,
+    changeTypes,
+    catalogEntries,
+  });
+
+  let layer2Tests: SynthesizedTest[];
+  try {
+    layer2Tests = await withRetry(
+      buildInvoker(mode, layer2Prompt, _cliRunner, _apiRunner),
+      2,
+    );
+  } catch (err) {
+    const retries = err instanceof RetryExhaustedError ? err.attempts - 1 : 0;
+    const lastOutput = err instanceof RetryExhaustedError ? err.lastError : err;
+    const pipelineError: PipelineError = {
+      stage: "synthesizer",
+      message: err instanceof Error ? err.message : String(err),
+      retries,
+      lastOutput,
+    };
+    return { tests: [], error: pipelineError };
+  }
+
+  return { tests: [...layer1Tests, ...layer2Tests], error: null };
 }

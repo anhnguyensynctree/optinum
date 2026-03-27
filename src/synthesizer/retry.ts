@@ -11,7 +11,7 @@ export class RetryExhaustedError extends Error {
 }
 
 export async function withRetry<T>(
-  fn: () => Promise<T>,
+  fn: (attempt: number) => Promise<T>,
   maxRetries: number = 2,
 ): Promise<T> {
   let lastError: unknown;
@@ -19,7 +19,7 @@ export async function withRetry<T>(
 
   for (let attempt = 1; attempt <= totalAttempts; attempt++) {
     try {
-      return await fn();
+      return await fn(attempt);
     } catch (err) {
       lastError = err;
     }

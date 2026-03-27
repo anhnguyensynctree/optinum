@@ -94,11 +94,33 @@ export const BenchmarkRecordSchema = z.object({
   changedFiles: z.array(z.string()),
   changeTypes: z.array(ChangeTypeSchema),
   blindSpotsDetected: z.array(z.string()),
-  laterFixCommit: z.null(),
-  bugSignal: z.null(),
+  laterFixCommit: z.string().nullable(),
+  bugSignal: z.string().nullable(),
   timestamp: z.string(),
 });
 export type BenchmarkRecord = z.infer<typeof BenchmarkRecordSchema>;
+
+// OSS evidence for a catalog expansion candidate
+export const OssEvidenceSchema = z.object({
+  repo: z.string(),
+  commitSha: z.string(),
+  changedFiles: z.array(z.string()),
+  laterFixCommit: z.string().optional(),
+  bugSignal: z.string().optional(),
+});
+export type OssEvidence = z.infer<typeof OssEvidenceSchema>;
+
+// A candidate pattern for catalog expansion derived from benchmark results
+export const ExpansionCandidateSchema = z.object({
+  patternId: z.string(),
+  changeType: ChangeTypeSchema,
+  description: z.string(),
+  evidence: z.array(OssEvidenceSchema),
+  firesCount: z.number().int().nonnegative(),
+  crossRefConfirmed: z.boolean(),
+  approved: z.boolean().optional(),
+});
+export type ExpansionCandidate = z.infer<typeof ExpansionCandidateSchema>;
 
 // Full pipeline result
 export const PipelineResultSchema = z.object({

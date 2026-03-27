@@ -144,7 +144,7 @@
 
 ## TASK-006
 **Title:** TestSynthesizer — Core Synthesis (Layer 1, schema-grounded)
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-004
 **Milestone:** MVP: CLI Proof of Concept on TypeScript + Python
 **Departments:** [engineering]
@@ -436,7 +436,7 @@
 
 ## TASK-016
 **Title:** OSS Benchmark Runner
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-010
 **Milestone:** MVP: CLI Proof of Concept on TypeScript + Python
 **Departments:** [engineering, qa]
