@@ -1,0 +1,37 @@
+[
+  {
+    "slug": "fastify-fastify",
+    "repoUrl": "https://github.com/fastify/fastify",
+    "language": "TypeScript",
+    "description": "Fast and low overhead web framework for Node.js. Rich HTTP routing with schema-based validation — ideal for surfacing contract-change blind spots on route handlers and plugin interfaces.",
+    "suggestedRange": "25a70ffbe0ea..d457aeda8611"
+  },
+  {
+    "slug": "trpc-trpc",
+    "repoUrl": "https://github.com/trpc/trpc",
+    "language": "TypeScript",
+    "description": "End-to-end typesafe APIs for TypeScript. Procedure definitions are direct API contracts — any input/output schema change is a contract-change blind spot candidate.",
+    "suggestedRange": "ec32cdd9da01..12bbc8ebf73d"
+  },
+  {
+    "slug": "honojs-hono",
+    "repoUrl": "https://github.com/honojs/hono",
+    "language": "TypeScript",
+    "description": "Ultrafast web framework for Cloudflare Workers, Deno, and Bun. Route handler and middleware boundaries provide high-signal integration points for blind spot detection.",
+    "suggestedRange": "5d59ac770b8a..e1ae0eb0f5a2"
+  },
+  {
+    "slug": "tiangolo-fastapi",
+    "repoUrl": "https://github.com/tiangolo/fastapi",
+    "language": "Python",
+    "description": "FastAPI — high performance Python API framework built on Pydantic and OpenAPI. Pydantic model changes on route parameters and response models are canonical contract-change blind spots.",
+    "suggestedRange": "fe98ea307a66..d128a7089a64"
+  },
+  {
+    "slug": "pallets-flask",
+    "repoUrl": "https://github.com/pallets/flask",
+    "language": "Python",
+    "description": "Lightweight Python WSGI web framework. Route decorator changes and request/response object modifications represent integration boundaries where blind spots commonly surface.",
+    "suggestedRange": "e82db2ca3a22..7ef2946fb515"
+  }
+]

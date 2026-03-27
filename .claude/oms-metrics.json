@@ -169,5 +169,23 @@
     "passed": true,
     "fail_at": null,
     "cost_usd": null
+  },
+  {
+    "task_id": "TASK-023",
+    "slug": "optinum",
+    "title": "OSS Evidence Collection Seed Repos",
+    "date": "2026-03-27T18:20:24.197853Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
+  },
+  {
+    "task_id": "TASK-030",
+    "slug": "optinum",
+    "title": "Metamorphic Relations Outer Loop",
+    "date": "2026-03-27T18:21:54.434462Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
   }
 ]

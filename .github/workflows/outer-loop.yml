@@ -1,0 +1,30 @@
+name: Outer Loop — Metamorphic Relations
+
+on:
+  push:
+    paths:
+      - "src/catalog/**"
+      - "src/synthesizer/prompts/**"
+  pull_request:
+    paths:
+      - "src/catalog/**"
+      - "src/synthesizer/prompts/**"
+
+jobs:
+  metamorphic-relations:
+    name: Run MR tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run outer loop MR tests
+        run: node --require tsx/cjs --test src/ci/outer-loop.test.ts

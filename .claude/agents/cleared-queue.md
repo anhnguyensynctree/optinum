@@ -173,7 +173,7 @@
 
 ## TASK-007
 **Title:** TestSynthesizer — Self-Correction Loop
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-004
 **Milestone:** MVP: CLI Proof of Concept on TypeScript + Python
 **Departments:** [engineering]
@@ -201,7 +201,7 @@
 
 ## TASK-008
 **Title:** TestSynthesizer — Blind Spot Layer Integration (Layer 2)
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-004
 **Milestone:** MVP: CLI Proof of Concept on TypeScript + Python
 **Departments:** [engineering, qa]
@@ -467,7 +467,7 @@
 
 ## TASK-017
 **Title:** OSS Benchmark Cross-Reference Engine
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-010
 **Milestone:** MVP: CLI Proof of Concept on TypeScript + Python
 **Departments:** [engineering, qa]
@@ -613,7 +613,7 @@
 
 ## TASK-022
 **Title:** Blind Spot Catalog Expansion Tooling
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-016
 **Milestone:** Validated & Shareable
 **Departments:** [engineering, qa]
