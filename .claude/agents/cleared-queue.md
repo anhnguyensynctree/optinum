@@ -906,9 +906,10 @@
 
 ## TASK-032
 **Title:** AI-Native Catalog Completion — 4 New Patterns + OSS Evidence
-**Status:** queued
+**Status:** done
 **Feature:** FEATURE-019
 **Milestone:** Validated & Shareable
+**Notes:** 23 patterns, 12 with real OSS evidence (all 6 critical), 7 AI-native flagged; commit d92c937
 **Departments:** [engineering, qa]
 **Size:** medium
 **Gate:** no-gate
@@ -937,7 +938,8 @@ The core framing shift: Optinum is AI-native testing. Every catalog pattern must
 
 ## TASK-033
 **Title:** AI-vs-AI Evidence: Prove AI Unit Tests Miss AI Code Bugs
-**Status:** queued
+**Status:** done
+**Notes:** 5 cases, 15 benchmark files, docs/ai-unit-test-gap.md 292 lines; commit a65834a
 **Feature:** FEATURE-019
 **Milestone:** Validated & Shareable
 **Departments:** [engineering, qa]
