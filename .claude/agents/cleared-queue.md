@@ -901,3 +901,34 @@
 **Produces:** Fixture catalog health check; CI gate before synthesis runs; 15-fixture coverage validation
 
 **Verify:** Completeness check passes on current 15 fixtures; correctly fails when a fixture is missing `expected-output.json`
+
+---
+
+## TASK-032
+**Title:** AI-Native Catalog Completion — 4 New Patterns + OSS Evidence
+**Status:** queued
+**Feature:** FEATURE-019
+**Milestone:** Validated & Shareable
+**Departments:** [engineering, qa]
+**Size:** medium
+**Gate:** no-gate
+**Depends-on:** [TASK-027]
+
+**Spec:** The system SHALL complete the blind spot catalog to ≥20 patterns, each carrying: `aiNative: true`, `aiNativeReason` (why an LLM specifically introduces this bug), and `ossEvidence` (a real OSS commit or issue link). The catalog must close the Milestone 2 exit gate. Patterns already added in v0.2.0 (async-forEach fire-and-forget, config-drift-across-files, optional-chain-assumed-truthy, error-type-assertion-unchecked) count toward the 20. Two still carry provisional ossEvidence (OSS-search placeholder) — those must be resolved to real links.
+
+**Context:**
+The core framing shift: Optinum is AI-native testing. Every catalog pattern must describe a mistake that AI specifically makes because of how LLMs are trained — not general bugs. The `aiNativeReason` field encodes this: "LLMs learn the async/await pattern without learning the iterator contract" is a stronger claim than "this is a common bug."
+
+**Scenarios:**
+1. Given the catalog at v0.2.0 with 20 patterns / When completeness check runs / Then all 20 have `ossEvidence` that is a real URL (no OSS-search placeholders)
+2. Given the 4 new AI-native patterns (IDs: async-foreach-fire-forget, config-drift-across-files, optional-chain-assumed-truthy, error-type-assertion-unchecked) / When reviewed / Then each has `aiNative: true` and a non-empty `aiNativeReason`
+3. Given the two provisional patterns with OSS-search placeholders (config-drift-across-files, error-type-assertion-unchecked) / When evidence search runs on GitHub / Then a real commit or issue link replaces the placeholder
+4. Given the existing 16 patterns with `ossEvidence: null` / When prioritised / Then at minimum the 5 critical-severity patterns gain real OSS evidence links
+
+**Artifacts:**
+- `src/catalog/blind-spot-catalog.json` — updated to v0.3.0 with all evidence resolved
+- `docs/blind-spot-catalog.md` — regenerated reference table with aiNativeReason column
+
+**Produces:** Catalog at ≥20 patterns with OSS evidence; Milestone 2 exit gate 2 closed; aiNative framing baked into every pattern
+
+**Verify:** `cat src/catalog/blind-spot-catalog.json | python3 -c "import json,sys; p=json.load(sys.stdin)['patterns']; print(len(p), 'patterns,', sum(1 for x in p if x.get('ossEvidence') and 'OSS-search' not in x['ossEvidence']), 'with real evidence')"` — must show ≥20 patterns and ≥18 with real evidence

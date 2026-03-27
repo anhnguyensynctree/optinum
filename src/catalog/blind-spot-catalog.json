@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
+  "version": "0.2.0",
   "patterns": [
     {
       "id": "params-renamed",
@@ -11,8 +11,8 @@
         "description": "Verify caller does not send old parameter names",
         "field": "oldParamName"
       },
-      "ossEvidence": null,
-      "provisional": true,
+      "ossEvidence": "https://github.com/emarco177/langchain-course/pull/35 — parameter renamed in scraping function definition but callers not updated",
+      "provisional": false,
       "fixtureRef": "fixture-001-contract-change",
       "severity": "high"
     },
@@ -41,8 +41,8 @@
         "description": "Verify caller sends newly required field",
         "field": "newRequiredField"
       },
-      "ossEvidence": null,
-      "provisional": true,
+      "ossEvidence": "https://github.com/cyruzin/golang-tmdb/issues/95 — struct missing required API fields (adult, known_for_department, original_name, popularity) after schema update",
+      "provisional": false,
       "fixtureRef": null,
       "severity": "critical"
     },
@@ -229,6 +229,70 @@
       "provisional": true,
       "fixtureRef": "fixture-014-error-swallowed",
       "severity": "high"
+    },
+    {
+      "id": "async-foreach-fire-forget",
+      "name": "Async forEach Fire-and-Forget",
+      "changeType": "cascade-change",
+      "description": "AI writes arr.forEach(async item => await fn(item)) not realising forEach ignores returned promises. Each async callback fires without being awaited — errors are silently swallowed and callers observe completion before work is done.",
+      "testPattern": {
+        "assertType": "call-made",
+        "description": "Verify all async operations complete before caller proceeds"
+      },
+      "ossEvidence": "https://github.com/microsoft/vscode/pull/304898 — forEach(async ...) causing fire-and-forget promises in notebook code; fixed by switching to Promise.all",
+      "provisional": false,
+      "fixtureRef": null,
+      "severity": "high",
+      "aiNative": true,
+      "aiNativeReason": "Human developers know forEach is synchronous; LLMs learn the async/await pattern without learning the iterator contract"
+    },
+    {
+      "id": "config-drift-across-files",
+      "name": "Provider Config Updated in One File, Missed Elsewhere",
+      "changeType": "config-drift",
+      "description": "AI updates an LLM provider, API key reference, or service config in the file it is editing but leaves stale references in other files. The app boots with split config — one path uses the new provider, another still calls the old one.",
+      "testPattern": {
+        "assertType": "field-sent",
+        "description": "Verify all config references resolve to the same provider/key"
+      },
+      "ossEvidence": "OSS-search: GitHub commits containing both 'ANTHROPIC_API_KEY' and 'GROQ_API_KEY' in the same diff where one file was updated and another was not — common in LLM wrapper repos",
+      "provisional": true,
+      "fixtureRef": null,
+      "severity": "high",
+      "aiNative": true,
+      "aiNativeReason": "AI applies changes to the file in scope; it does not grep the codebase for all references the way a human doing a provider swap would"
+    },
+    {
+      "id": "optional-chain-assumed-truthy",
+      "name": "Nested Property Access Without Null Guard",
+      "changeType": "type-widening",
+      "description": "AI accesses deeply nested properties (obj.user.profile.avatar) on values that can be null or undefined, without optional chaining or null guards. The happy path in training data rarely shows the null case so the guard is omitted.",
+      "testPattern": {
+        "assertType": "call-made",
+        "description": "Verify accessor handles null/undefined at each chain level"
+      },
+      "ossEvidence": "https://github.com/open-feature/java-sdk-contrib/pull/1709 — null pointer exception from missing descriptor check on optional value; fix added null guard before access",
+      "provisional": false,
+      "fixtureRef": null,
+      "severity": "high",
+      "aiNative": true,
+      "aiNativeReason": "LLMs are trained on happy-path examples; null/undefined branches appear less frequently in training data so guards are systematically omitted"
+    },
+    {
+      "id": "error-type-assertion-unchecked",
+      "name": "Error Response Cast to Type Without Runtime Validation",
+      "changeType": "contract-change",
+      "description": "AI uses TypeScript 'as' assertions to cast API error responses or exception objects to a typed shape without verifying the shape at runtime. When the actual error differs (e.g., string vs object), code accesses undefined fields silently.",
+      "testPattern": {
+        "assertType": "field-sent",
+        "description": "Verify error response shape is validated before field access"
+      },
+      "ossEvidence": "OSS-search: GitHub TypeScript repos, commits fixing 'Cannot read properties of undefined' in catch blocks after type assertion — search: 'fix catch as CustomError' or 'add type guard error'",
+      "provisional": true,
+      "fixtureRef": null,
+      "severity": "medium",
+      "aiNative": true,
+      "aiNativeReason": "AI knows the intended type from context and asserts it confidently; it doesn't model the possibility that the runtime value diverges from the declared shape"
     }
   ]
 }
