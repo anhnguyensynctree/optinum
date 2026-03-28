@@ -1,0 +1,241 @@
+[
+  {
+    "id": "exp-001",
+    "repo": "yt-knowledge",
+    "commit": "2ab927d",
+    "ai_tool": "Claude Code",
+    "description": "Split claude_model config key into analyzer_model + brain_model",
+    "files_changed": ["config.yaml", "yt_knowledge/cli.py"],
+    "change_type": "config-drift-across-files",
+    "catalog_pattern": "config-drift-across-files",
+    "ai_tests_written": [],
+    "optinum_test_generated": {
+      "description": "Verify that loading config with legacy 'claude_model' key raises ConfigurationError with migration hint, not silent fallback to default model",
+      "endpoint": "settings.get('analyzer_model')",
+      "caseType": "ai-blind-spot",
+      "payload": { "config": { "claude_model": "claude-opus-4-6" } },
+      "expectedStatus": "ConfigurationError",
+      "expectedShape": { "error": "string", "hint": "string" },
+      "expectedResult": "FAIL — AI code silently uses default 'claude-sonnet-4-6' instead of raising; config.yaml.example still references claude_model"
+    },
+    "verdict": "CATCH",
+    "evidence": "config.yaml.example still references claude_model after commit; cli.py reads analyzer_model/brain_model without validating that old keys are absent; user copying the example would silently get wrong model allocation",
+    "new_pattern_surfaced": null
+  },
+  {
+    "id": "exp-002",
+    "repo": "daily-cosmos",
+    "commit": "824dd7c0",
+    "ai_tool": "Claude Code (OMS)",
+    "description": "Rename primary_label → primary_identity across 8 Stage 1 extractors",
+    "files_changed": ["lib/synthesis/types.ts", "lib/synthesis/stage1/*.ts", "lib/synthesis/stage4/anchor-identities.ts"],
+    "change_type": "contract-change",
+    "catalog_pattern": "params-renamed",
+    "ai_tests_written": [
+      "stage1/fate-design.test.ts — verifies new primary_identity field per extractor",
+      "stage1/tu-vi.test.ts — verifies primary_identity is Mệnh Chủ star name",
+      "stage4/synthesize.test.ts — spot check on stage4 output"
+    ],
+    "optinum_test_generated": {
+      "description": "Verify that anchor-identities.ts gracefully handles a SystemOutput with legacy 'primary_label' field (backward compatibility for cached/stored data) rather than silently returning undefined",
+      "endpoint": "anchor-identities.buildChipRow(systemOutput)",
+      "caseType": "ai-blind-spot",
+      "payload": { "systemOutput": { "system": "western_astrology", "primary_label": "Pisces", "primary_identity": null } },
+      "expectedStatus": "string",
+      "expectedShape": { "chip": "string" },
+      "expectedResult": "FAIL — anchor-identities reads primary_identity directly; legacy data with primary_label only returns undefined chip; AI tests only verified new-format data"
+    },
+    "verdict": "CATCH",
+    "evidence": "AI tests verify new extraction output but not backward compatibility with stored/cached SystemOutput objects that still carry the old primary_label field; any previously computed and cached stage1 output becomes invisible to anchor-identities after the rename",
+    "new_pattern_surfaced": null
+  },
+  {
+    "id": "exp-003",
+    "repo": "rentandlend-platform",
+    "commit": "82fe72c",
+    "ai_tool": "Claude Code",
+    "description": "Null out pickup_location_id — static string IDs are not DB UUIDs",
+    "files_changed": ["packages/frontend/src/app/items/[id]/page.tsx"],
+    "change_type": "contract-change",
+    "catalog_pattern": "params-renamed",
+    "ai_tests_written": [],
+    "optinum_test_generated": {
+      "description": "Verify that createBooking with pickup_location_id=null produces a complete booking confirmation with a 'pickup location TBD' fallback, not a null display or crash",
+      "endpoint": "POST /api/bookings",
+      "caseType": "boundary",
+      "payload": { "item_id": "uuid", "pickup_location_id": null },
+      "expectedStatus": 201,
+      "expectedShape": { "booking_id": "string", "pickup_location": "string|null" },
+      "expectedResult": "PASS — null is handled gracefully by the booking API; confirmation renders without pickup location"
+    },
+    "verdict": "MISS",
+    "evidence": "The null fix is correct and safe — pickup_location_id=null is a valid nullable FK in the DB schema. The downstream display degrades gracefully (null displayed as empty/TBD). Optinum's generated test passes on the AI's code — no real integration gap exposed.",
+    "new_pattern_surfaced": null
+  },
+  {
+    "id": "exp-004",
+    "repo": "rentandlend-platform",
+    "commit": "0e26bb8",
+    "ai_tool": "Claude Code",
+    "description": "Route groups refactor + UserRoleProvider context + role-based dashboard routing",
+    "files_changed": ["packages/frontend/src/app/**/*.tsx"],
+    "change_type": "cascade-change",
+    "catalog_pattern": "cascade-blindness",
+    "ai_tests_written": [
+      "UserRoleProvider unit tests — verifies context value propagation",
+      "Dashboard routing unit tests — verifies route conditions"
+    ],
+    "optinum_test_generated": {
+      "description": "Verify that navigating to /dashboard as a lender renders lender-specific UI and not renter UI or an empty loading state; test role-to-page cascade end-to-end",
+      "endpoint": "GET /dashboard",
+      "caseType": "cascade",
+      "payload": { "role": "lender", "session": "valid" },
+      "expectedStatus": 200,
+      "expectedShape": { "content": "lender-dashboard" },
+      "expectedResult": "MISS — AI wrote provider unit tests but the routing cascade (provider → dashboard conditional → lender view) was tested in isolation at each layer, not end-to-end"
+    },
+    "verdict": "MISS",
+    "evidence": "Provider and routing unit tests cover each layer independently. While the E2E test suite may cover the full flow, Optinum's cascade-blindness test maps to existing coverage. No unique failure exposed.",
+    "new_pattern_surfaced": null
+  },
+  {
+    "id": "exp-005",
+    "repo": "rentandlend-platform",
+    "commit": "823cde8",
+    "ai_tool": "Claude Code",
+    "description": "Add /favorites page — was previously returning 404",
+    "files_changed": ["packages/frontend/src/app/favorites/page.tsx"],
+    "change_type": "new-write-endpoint",
+    "catalog_pattern": "input-trust-violation",
+    "ai_tests_written": [],
+    "optinum_test_generated": {
+      "description": "Verify that /favorites server-side renders no sensitive user data before client-side auth redirect fires — SSR renders the full page HTML before useEffect auth check runs, exposing any user-specific content in the initial HTML payload",
+      "endpoint": "GET /favorites",
+      "caseType": "ai-blind-spot",
+      "payload": { "cookies": {} },
+      "expectedStatus": 200,
+      "expectedShape": { "html": "string" },
+      "expectedResult": "CATCH — client-side auth guard (useEffect + router.push) fires after SSR; the initial server render returns full page HTML without redirecting; any user data fetched server-side is present in the initial payload before the client-side redirect executes"
+    },
+    "verdict": "CATCH",
+    "evidence": "AI implemented auth guard as a client-side useEffect redirect. Next.js App Router SSR renders the page content before the client-side redirect fires. No server-side auth check (middleware.ts or async server component auth) exists for this route. Unauthenticated crawlers or fetch requests receive the full page HTML. AI tests: none written for the new page. Optinum catch pattern: input-trust-violation — sensitive data exposed at wrong boundary.",
+    "new_pattern_surfaced": null
+  },
+  {
+    "id": "exp-006",
+    "repo": "daily-cosmos",
+    "commit": "177838d3",
+    "ai_tool": "Claude Code (OMS)",
+    "description": "Switch blinded-judge from Anthropic API to Groq (Llama) for independence",
+    "files_changed": ["lib/calibration/blinded-judge.ts", "lib/calibration/blinded-judge.test.ts", "scripts/calibrate-stage4-questionnaire.ts"],
+    "change_type": "config-drift-across-files",
+    "catalog_pattern": "config-drift-across-files",
+    "ai_tests_written": [
+      "blinded-judge.test.ts — mocks global fetch, verifies judgeTraitsBlinded returns count from Groq response structure"
+    ],
+    "optinum_test_generated": {
+      "description": "Verify that judgeTraitsBlinded throws a clear ConfigurationError when GROQ_API_KEY environment variable is absent, not a silent fetch request with 'Bearer undefined' as the Authorization header",
+      "endpoint": "judgeTraitsBlinded(traits, profile)",
+      "caseType": "ai-blind-spot",
+      "payload": { "env": { "GROQ_API_KEY": null } },
+      "expectedStatus": "ConfigurationError",
+      "expectedShape": { "error": "GROQ_API_KEY not configured" },
+      "expectedResult": "FAIL — AI code reads process.env.GROQ_API_KEY and passes it directly to fetch Authorization header without validation; missing key sends 'Bearer undefined' to Groq API and returns HTTP 401 from Groq instead of a clear local error"
+    },
+    "verdict": "CATCH",
+    "evidence": "AI tests stub process.env.GROQ_API_KEY = 'test-groq-key' in beforeEach but never test the absent-key path. Code reads the env var and passes directly to fetch Authorization header. In a deployment where GROQ_API_KEY is missing or misconfigured, the function sends an invalid Authorization header and gets a Groq 401 — surfaced as an opaque 'fetch failed' error rather than a clear startup configuration error.",
+    "new_pattern_surfaced": null
+  },
+  {
+    "id": "exp-007",
+    "repo": "mind-drops",
+    "commit": "dec51213",
+    "ai_tool": "Claude Code",
+    "description": "Two-phase parallel scan — Haiku scans all passages in parallel via asyncio.gather, Sonnet generates only qualified passages",
+    "files_changed": ["pipeline/script_generator/__init__.py"],
+    "change_type": "cascade-change",
+    "catalog_pattern": "cascade-blindness",
+    "ai_tests_written": [],
+    "optinum_test_generated": {
+      "description": "Verify that when 1 of N passage analyses raises an unhandled exception inside _analyse_one, the remaining N-1 passages still complete generation — asyncio.gather without return_exceptions=True propagates the first exception and cancels the entire batch",
+      "endpoint": "generate_scripts(triplets)",
+      "caseType": "ai-blind-spot",
+      "payload": { "triplets": ["passage-ok", "passage-raise", "passage-ok"] },
+      "expectedStatus": "partial_results",
+      "expectedShape": { "scripts": "array", "errors": "array" },
+      "expectedResult": "MISS — inner _analyse_one has try/except that returns None on failure; gather sees None, filter removes it, generation proceeds on qualified passages. Error isolation is present at the inner level. Optinum's test passes on the AI's code."
+    },
+    "verdict": "MISS",
+    "evidence": "Closer inspection: _analyse_one has an inner try/except block that catches exceptions and returns None. asyncio.gather receives None from failed analyses. The filter `[... for t, a in analysed if a is not None and a.qualifies]` handles None correctly. Error isolation is present — Optinum's partial-failure test passes. The AI did handle this case.",
+    "new_pattern_surfaced": null
+  },
+  {
+    "id": "exp-008",
+    "repo": "yt-knowledge",
+    "commit": "50ce6ff",
+    "ai_tool": "Claude Code",
+    "description": "Consolidate notify_daily_brief into notify_session_summary with new domain_brains parameter",
+    "files_changed": ["yt_knowledge/cli.py", "yt_knowledge/discord.py"],
+    "change_type": "contract-change",
+    "catalog_pattern": "params-renamed",
+    "ai_tests_written": [],
+    "optinum_test_generated": {
+      "description": "Verify that all callers of the Discord notifier use notify_session_summary — any remaining calls to the removed notify_daily_brief raise AttributeError at runtime",
+      "endpoint": "notifier.notify_daily_brief(processed)",
+      "caseType": "contract",
+      "payload": { "notifier": "DiscordNotifier", "method": "notify_daily_brief" },
+      "expectedStatus": "AttributeError",
+      "expectedShape": { "error": "string" },
+      "expectedResult": "PASS — rename was done atomically in a single commit touching both cli.py (caller) and discord.py (definition); no external callers reference notify_daily_brief. Optinum's blast radius analysis confirms the method had only one call site, which was updated in the same diff."
+    },
+    "verdict": "MISS",
+    "evidence": "The rename was applied atomically — cli.py (the sole caller) and discord.py (the definition) were both updated in the same commit. Blast radius analysis finds no other call sites. No catch.",
+    "new_pattern_surfaced": null
+  },
+  {
+    "id": "exp-009",
+    "repo": "sonai",
+    "commit": "2f47231",
+    "ai_tool": "Claude Code (OMS)",
+    "description": "Add time-travel Supabase Edge Function — weekly cron for temporal pattern notifications",
+    "files_changed": ["supabase/functions/time-travel/index.ts", "supabase/functions/time-travel/pattern-query.ts", "supabase/functions/time-travel/notification-sender.ts", "supabase/functions/time-travel/content-validator.ts", "supabase/functions/time-travel/types.ts"],
+    "change_type": "new-write-endpoint",
+    "catalog_pattern": "input-trust-violation",
+    "ai_tests_written": [],
+    "optinum_test_generated": {
+      "description": "Verify that the time-travel edge function rejects direct HTTP POST requests without a valid Supabase service role JWT — cron-only functions should not be invocable by unauthenticated external callers",
+      "endpoint": "POST /functions/v1/time-travel",
+      "caseType": "ai-blind-spot",
+      "payload": { "headers": { "Authorization": null } },
+      "expectedStatus": 401,
+      "expectedShape": { "error": "Unauthorized" },
+      "expectedResult": "CATCH — function has no Authorization header validation; it processes the request and returns 200 with processed/skipped counts regardless of caller identity; Supabase Edge Functions require explicit JWT verification inside the function for write operations — infrastructure-level auth does not block authenticated-but-wrong-role callers"
+    },
+    "verdict": "CATCH",
+    "evidence": "The time-travel function sends push notifications to users. It has no JWT verification inside the handler. While Supabase anon key gates public access, any caller with the anon key (leaked from client bundle) can trigger the cron manually, causing spurious notifications to all matching users. AI tests: none written. Optinum catch pattern: input-trust-violation — write endpoint processes without verifying caller identity or authorization level.",
+    "new_pattern_surfaced": null
+  },
+  {
+    "id": "exp-010",
+    "repo": "mind-drops",
+    "commit": "21a8ccf7",
+    "ai_tool": "Claude Code",
+    "description": "Quality gate on drama_intensity/standalone — write→critique→rewrite loop fixed",
+    "files_changed": ["pipeline/script_generator/__init__.py"],
+    "change_type": "cascade-change",
+    "catalog_pattern": "cascade-blindness",
+    "ai_tests_written": [],
+    "optinum_test_generated": {
+      "description": "Verify that when ALL passages fail the drama_intensity quality gate (qualified=[]), generate_scripts returns an empty list rather than raising an exception or hanging indefinitely",
+      "endpoint": "generate_scripts(triplets)",
+      "caseType": "boundary",
+      "payload": { "triplets": ["low-drama-1", "low-drama-2"], "all_below_threshold": true },
+      "expectedStatus": "empty_list",
+      "expectedShape": { "scripts": [] },
+      "expectedResult": "PASS — asyncio.gather(*[]) is valid Python and returns []; empty qualified list produces empty results list; the caller handles empty output gracefully. Edge case is handled correctly by language semantics."
+    },
+    "verdict": "MISS",
+    "evidence": "Python's asyncio.gather with an empty iterable returns an empty list without raising. The empty-qualified-list edge case is handled correctly by language semantics. Optinum's test passes on the AI's code.",
+    "new_pattern_surfaced": null
+  }
+]

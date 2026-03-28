@@ -1030,3 +1030,51 @@ Or JSON: https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified/resolv
 **Produces:** Empirical catch rate on 250+ real-world bugs; publishable benchmark; proof that Optinum catches bugs AI unit tests miss on actual OSS code
 
 **Verify:** results.json exists with ≥15 pilot entries; catch rate calculated; pilot-15.md narrative explains what was caught and what was missed
+
+---
+
+## TASK-035
+**Title:** AI-Native Replication Experiment — 10 Real AI-Generated PRs
+**Status:** done
+**Feature:** FEATURE-020
+**Milestone:** Validated & Shareable
+**Departments:** [engineering, qa]
+**Size:** medium
+**Gate:** no-gate
+**Depends-on:** [TASK-033]
+
+**Spec:** The system SHALL run Optinum against 10 real AI-generated diffs (from repos built with Claude Code, Cursor, Copilot, or Devin) and record: how many generate tests the AI didn't write, and how many of those tests fail on the AI's code. Target: 2-3 catches out of 10.
+
+**Context:**
+This is the proof of concept — not a benchmark, a replication experiment. The claim: when AI writes code and AI writes tests in the same session, both share the same blind spot. Optinum runs from outside that loop and catches what the AI missed. 2-3 catches out of 10 is sufficient to prove the failure is systematic, not random.
+
+SWE-bench validates the classifier on real production code. This task validates the core thesis on AI-native code specifically.
+
+**What counts as AI-native:**
+- Repos with "built with Cursor / Claude Code / Copilot / Devin" in README or commit history
+- PRs where commit messages reference AI tool generation
+- Personal projects of early users (with permission)
+- Devin/SWE-agent public output repos
+
+**Experiment protocol for each of the 10 diffs:**
+1. Record: repo, commit/PR, AI tool used (if known), files changed
+2. Extract: what tests the AI wrote alongside the code change (if any)
+3. Run: `optinum test --diff <diff> --dry-run` to get Optinum's generated tests
+4. Compare: which Optinum tests are NOT in the AI's test suite?
+5. Run: Optinum's unique tests against the AI's code — does any fail?
+6. Record: CATCH (Optinum found a real failure) or MISS (Optinum also missed it)
+
+**Scenarios:**
+1. Given 10 AI-generated diffs / When Optinum runs on each / Then ≥7 generate at least 1 test the AI didn't write
+2. Given the Optinum-unique tests / When run against the AI's code / Then ≥2 of 10 fail (proving real integration gap)
+3. Given each catch / When analyzed / Then it maps to an existing catalog pattern — or surfaces a new one
+4. Given each new pattern surfaced / When added to catalog / Then aiNativeReason explains why LLMs specifically miss it
+
+**Artifacts:**
+- `benchmark/ai-native/results.json` — per-diff: repo, AI tool, Optinum tests generated, AI tests written, catch/miss, catalog pattern matched
+- `docs/replication-experiment.md` — narrative: what we tested, what we found, what each catch proves
+- Any new catalog patterns surfaced → appended to `src/catalog/blind-spot-catalog.json`
+
+**Produces:** Empirical replication of core thesis on real AI-generated code; publishable catch rate; catalog growth from real evidence
+
+**Verify:** results.json has 10 entries; ≥2 CATCH results; each catch maps to a catalog pattern; docs/replication-experiment.md is under 300 lines
