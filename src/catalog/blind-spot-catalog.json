@@ -11,7 +11,7 @@
         "description": "Verify caller does not send old parameter names",
         "field": "oldParamName"
       },
-      "ossEvidence": "https://github.com/emarco177/langchain-course/pull/35 — parameter renamed in scraping function definition but callers not updated",
+      "ossEvidence": "https://github.com/Writewyze/qodo-test-shared-models/pull/1 \u2014 Cursor renamed email \u2192 emailAddress in schema and most validators but missed the length-check reader on line 29; Cursor Bugbot caught it in its own PR review; also https://github.com/langchain-ai/langchain/issues/35852 \u2014 dispatch built args['path'] but both _handle_rename implementations read args['old_path'] causing KeyError on every rename",
       "provisional": false,
       "fixtureRef": "fixture-001-contract-change",
       "severity": "high"
@@ -26,7 +26,7 @@
         "description": "Verify caller handles new response shape",
         "field": "data"
       },
-      "ossEvidence": "https://github.com/Monichre/digital-mischief-group/pull/1 — Firecrawl v2 API changed branding fields into a nested data envelope; callers destructuring top-level payload.branding broke silently; fix added fallback for both shapes",
+      "ossEvidence": "https://github.com/Monichre/digital-mischief-group/pull/1 \u2014 Firecrawl v2 API changed branding fields into a nested data envelope; callers destructuring top-level payload.branding broke silently; fix added fallback for both shapes",
       "provisional": false,
       "fixtureRef": "fixture-002-return-shape-change",
       "severity": "high"
@@ -41,7 +41,7 @@
         "description": "Verify caller sends newly required field",
         "field": "newRequiredField"
       },
-      "ossEvidence": "https://github.com/cyruzin/golang-tmdb/issues/95 — struct missing required API fields (adult, known_for_department, original_name, popularity) after schema update",
+      "ossEvidence": "https://github.com/cyruzin/golang-tmdb/issues/95 \u2014 struct missing required API fields (adult, known_for_department, original_name, popularity) after schema update",
       "provisional": false,
       "fixtureRef": null,
       "severity": "critical"
@@ -64,7 +64,7 @@
       "id": "status-code-changed",
       "name": "HTTP Status Code Changed",
       "changeType": "contract-change",
-      "description": "AI changes the HTTP status code returned by an endpoint (e.g., 201→200) but callers check the old status code to determine success, causing silent logic failures.",
+      "description": "AI changes the HTTP status code returned by an endpoint (e.g., 201\u2192200) but callers check the old status code to determine success, causing silent logic failures.",
       "testPattern": {
         "assertType": "status-code",
         "description": "Verify caller handles updated status code",
@@ -85,7 +85,7 @@
         "description": "Verify caller sends idempotency key",
         "field": "idempotencyKey"
       },
-      "ossEvidence": "https://github.com/adamrodi/groundwork/pull/6 — Stripe PaymentIntent created without idempotency key; code review identified the gap and fix added idempotency key to PaymentIntent creation call",
+      "ossEvidence": "https://github.com/adamrodi/groundwork/pull/6 \u2014 Stripe PaymentIntent created without idempotency key; code review identified the gap and fix added idempotency key to PaymentIntent creation call",
       "provisional": false,
       "fixtureRef": "fixture-006-idempotency",
       "severity": "critical"
@@ -99,7 +99,7 @@
         "assertType": "call-made",
         "description": "Verify ownership check is performed after auth check"
       },
-      "ossEvidence": "https://github.com/fagemx/edda/issues/288 — router() exposed publicly without auth middleware; post_scope_check accepted arbitrary project_id without verifying caller owned the resource; fix scoped router to pub(crate) and added ownership validation",
+      "ossEvidence": "https://github.com/fagemx/edda/issues/288 \u2014 router() exposed publicly without auth middleware; post_scope_check accepted arbitrary project_id without verifying caller owned the resource; fix scoped router to pub(crate) and added ownership validation",
       "provisional": false,
       "fixtureRef": "fixture-004-auth-ownership",
       "severity": "critical"
@@ -113,7 +113,7 @@
         "assertType": "call-made",
         "description": "Verify auth middleware is applied to new endpoint"
       },
-      "ossEvidence": "https://github.com/OneStepAt4time/aegis/issues/349 — new route hooks added outside authenticated router group using broad startsWith('/v1/hooks') match, making unintended paths publicly accessible; fix switched to exact path matching with auth on all endpoints",
+      "ossEvidence": "https://github.com/OneStepAt4time/aegis/issues/349 \u2014 new route hooks added outside authenticated router group using broad startsWith('/v1/hooks') match, making unintended paths publicly accessible; fix switched to exact path matching with auth on all endpoints",
       "provisional": false,
       "fixtureRef": "fixture-003-missing-auth-check",
       "severity": "critical"
@@ -127,7 +127,7 @@
         "assertType": "call-made",
         "description": "Verify all callers pass through sanitization layer"
       },
-      "ossEvidence": null,
+      "ossEvidence": "https://github.com/am225723/quoagent/pull/33 \u2014 Jules built /api/run, /api/approve, /api/contacts/* with zero auth; Jules Sentinel then discovered the gap and wrote its own post-mortem: 'The /api/run endpoint was completely unprotected. The presence of a CRON_SECRET in the environment is useless if the code does not check it.'",
       "provisional": true,
       "fixtureRef": "fixture-005-input-trust",
       "severity": "high"
@@ -141,7 +141,7 @@
         "assertType": "call-made",
         "description": "Verify atomic operation is wrapped in transaction"
       },
-      "ossEvidence": "https://github.com/adssoccer1/finserv-monorepo/issues/11 — LedgerService.recordPayment() writes DEBIT and CREDIT sequentially with no transaction boundary; crash between writes leaves ledger permanently imbalanced; also https://github.com/ChainSafe/canton-middleware/issues/171 — EVM store SaveEvmTransaction, SaveEvmLog, NextEvmBlock executed as independent statements causing orphaned records on partial failure",
+      "ossEvidence": "https://github.com/adssoccer1/finserv-monorepo/issues/11 \u2014 LedgerService.recordPayment() writes DEBIT and CREDIT sequentially with no transaction boundary; crash between writes leaves ledger permanently imbalanced; also https://github.com/ChainSafe/canton-middleware/issues/171 \u2014 EVM store SaveEvmTransaction, SaveEvmLog, NextEvmBlock executed as independent statements causing orphaned records on partial failure",
       "provisional": false,
       "fixtureRef": "fixture-011-transaction-missing",
       "severity": "critical"
@@ -155,7 +155,7 @@
         "assertType": "call-made",
         "description": "Verify cascade delete/update calls are made to related entities"
       },
-      "ossEvidence": null,
+      "ossEvidence": "https://github.com/jurjans/ksj-wp-func/commit/e735faf677f2f8060b7f100db4265a06444a94ce \u2014 Claude dead-code removal deleted get_model() from function_app.py (looked unused) but fb_gen.py called it internally; required two separate restore commits; also https://github.com/langchain-ai/langchain/issues/35852 \u2014 both middleware classes (_StateClaudeFileToolMiddleware and _FilesystemClaudeFileToolMiddleware) were generated from the same flawed template with the wrong key name",
       "provisional": true,
       "fixtureRef": "fixture-007-cascade-missing",
       "severity": "high"
@@ -197,7 +197,7 @@
         "assertType": "artifact-exists",
         "description": "Verify migration file exists for schema change"
       },
-      "ossEvidence": "https://github.com/BerriAI/litellm/issues/24433 — Prisma schema for LiteLLM_MCPServerTable updated with source_url column but migration file not generated; column missing on every container restart causing runtime errors; also https://github.com/sarathfranciswork/ignite/issues/270 — squashed migration files inconsistent with schema causing drift in production",
+      "ossEvidence": "https://github.com/BerriAI/litellm/issues/24433 \u2014 Prisma schema for LiteLLM_MCPServerTable updated with source_url column but migration file not generated; column missing on every container restart causing runtime errors; also https://github.com/sarathfranciswork/ignite/issues/270 \u2014 squashed migration files inconsistent with schema causing drift in production",
       "provisional": false,
       "fixtureRef": "fixture-010-migration-drift",
       "severity": "critical"
@@ -234,12 +234,12 @@
       "id": "async-foreach-fire-forget",
       "name": "Async forEach Fire-and-Forget",
       "changeType": "cascade-change",
-      "description": "AI writes arr.forEach(async item => await fn(item)) not realising forEach ignores returned promises. Each async callback fires without being awaited — errors are silently swallowed and callers observe completion before work is done.",
+      "description": "AI writes arr.forEach(async item => await fn(item)) not realising forEach ignores returned promises. Each async callback fires without being awaited \u2014 errors are silently swallowed and callers observe completion before work is done.",
       "testPattern": {
         "assertType": "call-made",
         "description": "Verify all async operations complete before caller proceeds"
       },
-      "ossEvidence": "https://github.com/microsoft/vscode/pull/304898 — forEach(async ...) causing fire-and-forget promises in notebook code; fixed by switching to Promise.all",
+      "ossEvidence": "https://github.com/microsoft/vscode/pull/304898 \u2014 forEach(async ...) causing fire-and-forget promises in notebook code; fixed by switching to Promise.all",
       "provisional": false,
       "fixtureRef": null,
       "severity": "high",
@@ -250,12 +250,12 @@
       "id": "config-drift-across-files",
       "name": "Provider Config Updated in One File, Missed Elsewhere",
       "changeType": "config-drift",
-      "description": "AI updates an LLM provider, API key reference, or service config in the file it is editing but leaves stale references in other files. The app boots with split config — one path uses the new provider, another still calls the old one.",
+      "description": "AI updates an LLM provider, API key reference, or service config in the file it is editing but leaves stale references in other files. The app boots with split config \u2014 one path uses the new provider, another still calls the old one.",
       "testPattern": {
         "assertType": "field-sent",
         "description": "Verify all config references resolve to the same provider/key"
       },
-      "ossEvidence": "https://github.com/SamuelPalubaCZ/Picas/pull/10 — env var GOOGLE_FONT_API_KEY renamed to google_font_api_key in one file; next.config.js and other files still referenced the old name; app failed silently on font loading; required a follow-up PR to sweep remaining references",
+      "ossEvidence": "https://github.com/MalikAhmad911/infinite-rankers/pull/1 \u2014 Claude PR author renamed NEON_DATABASE_URL \u2192 DATABASE_URL in code; .env.example still had old key + wrong PORT; also https://github.com/theideaiq/monorepo/pull/660 \u2014 Jules bot created 4 separate PRs to fix Zod schema keys missing from .env.example",
       "provisional": false,
       "fixtureRef": null,
       "severity": "high",
@@ -271,7 +271,7 @@
         "assertType": "call-made",
         "description": "Verify accessor handles null/undefined at each chain level"
       },
-      "ossEvidence": "https://github.com/open-feature/java-sdk-contrib/pull/1709 — null pointer exception from missing descriptor check on optional value; fix added null guard before access",
+      "ossEvidence": "https://github.com/open-feature/java-sdk-contrib/pull/1709 \u2014 null pointer exception from missing descriptor check on optional value; fix added null guard before access",
       "provisional": false,
       "fixtureRef": null,
       "severity": "high",
@@ -287,7 +287,7 @@
         "assertType": "field-sent",
         "description": "Verify error response shape is validated before field access"
       },
-      "ossEvidence": "https://github.com/RocketChat/Rocket.Chat/pull/39428 — Twilio SMS provider used catch (e: any) and accessed e.message directly; when a non-Error value was thrown, e.message was undefined causing agents to receive 'undefined' notification; fix replaced as-cast with instanceof narrowing",
+      "ossEvidence": "https://github.com/RocketChat/Rocket.Chat/pull/39428 \u2014 Twilio SMS provider used catch (e: any) and accessed e.message directly; when a non-Error value was thrown, e.message was undefined causing agents to receive 'undefined' notification; fix replaced as-cast with instanceof narrowing",
       "provisional": false,
       "fixtureRef": null,
       "severity": "medium",
@@ -303,39 +303,39 @@
         "assertType": "field-sent",
         "description": "Verify real caller payload matches actual contract, not the mocked shape"
       },
-      "ossEvidence": "OSS-search: GitHub issues where unit tests pass but integration fails on a field that was mocked in test — search 'mock returned wrong shape' OR 'test passed but production failed' in TypeScript/Jest repos",
+      "ossEvidence": "OSS-search: GitHub issues where unit tests pass but integration fails on a field that was mocked in test \u2014 search 'mock returned wrong shape' OR 'test passed but production failed' in TypeScript/Jest repos",
       "provisional": true,
       "fixtureRef": null,
       "severity": "high",
       "aiNative": true,
-      "aiNativeReason": "AI generates both the code and the test in the same session with the same context. The mock reflects what the AI assumed the dependency returns — if that assumption is wrong, the test is a circular proof of nothing"
+      "aiNativeReason": "AI generates both the code and the test in the same session with the same context. The mock reflects what the AI assumed the dependency returns \u2014 if that assumption is wrong, the test is a circular proof of nothing"
     },
     {
       "id": "boundary-values-untested",
       "name": "AI Test Suite Has No Boundary or Edge Case Assertions",
       "changeType": "type-widening",
-      "description": "AI generates a test suite with high line coverage but only tests happy-path inputs — the exact values used in examples. Empty arrays, zero, null, empty string, max integer, duplicate keys: none appear. Optinum probes these boundaries by design because they are the inputs real users send and LLMs never generate tests for.",
+      "description": "AI generates a test suite with high line coverage but only tests happy-path inputs \u2014 the exact values used in examples. Empty arrays, zero, null, empty string, max integer, duplicate keys: none appear. Optinum probes these boundaries by design because they are the inputs real users send and LLMs never generate tests for.",
       "testPattern": {
         "assertType": "field-sent",
         "description": "Probe boundary values: empty, null, zero, max, duplicate"
       },
-      "ossEvidence": "Reference: 'Why AI-Generated Tests Are Not Enough' — documented pattern across Copilot/ChatGPT test generation studies showing 90%+ happy-path bias in AI-written test suites. OSS-search: repos where AI generated tests but coverage drops to 0% on error paths.",
+      "ossEvidence": "Reference: 'Why AI-Generated Tests Are Not Enough' \u2014 documented pattern across Copilot/ChatGPT test generation studies showing 90%+ happy-path bias in AI-written test suites. OSS-search: repos where AI generated tests but coverage drops to 0% on error paths.",
       "provisional": true,
       "fixtureRef": null,
       "severity": "high",
       "aiNative": true,
-      "aiNativeReason": "Training data contains far more success-path examples than failure-path examples. AI reproduces the distribution it was trained on — tests cover what the training data showed being tested"
+      "aiNativeReason": "Training data contains far more success-path examples than failure-path examples. AI reproduces the distribution it was trained on \u2014 tests cover what the training data showed being tested"
     },
     {
       "id": "error-path-untested-by-ai",
       "name": "Error Path Exists in Code but Has No Test",
       "changeType": "cascade-change",
-      "description": "AI writes a function with explicit error handling (try/catch, error return, 400/500 status branch) but writes no test for the error case. The error path is syntactically correct but functionally unverified — it may swallow errors, return wrong shape, or crash on a different input. Optinum generates a test that deliberately triggers the error path.",
+      "description": "AI writes a function with explicit error handling (try/catch, error return, 400/500 status branch) but writes no test for the error case. The error path is syntactically correct but functionally unverified \u2014 it may swallow errors, return wrong shape, or crash on a different input. Optinum generates a test that deliberately triggers the error path.",
       "testPattern": {
         "assertType": "status-code",
         "description": "Trigger error path and verify error response shape and status code"
       },
-      "ossEvidence": "OSS-search: PRs titled 'fix error handling' OR 'add error case test' across Node.js/Python API repos — these are post-hoc fixes for exactly this pattern after production failures",
+      "ossEvidence": "OSS-search: PRs titled 'fix error handling' OR 'add error case test' across Node.js/Python API repos \u2014 these are post-hoc fixes for exactly this pattern after production failures",
       "provisional": true,
       "fixtureRef": null,
       "severity": "high",
