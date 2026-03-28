@@ -966,3 +966,67 @@ The product claim is: when AI writes both code and tests, it misses the same bli
 **Produces:** Empirical proof of core product thesis; shareable artifact for developer evangelism; foundation for blog post / demo
 
 **Verify:** Each case in `docs/ai-unit-test-gap.md` has a corresponding synthetic fixture in `benchmark/ai-unit-test-gap/` that reproduces the failure; document is under 400 lines; all 5 cases are distinct failure classes
+
+---
+
+## TASK-034
+**Title:** SWE-bench Benchmark — Empirical Proof Run
+**Status:** queued
+**Feature:** FEATURE-020
+**Milestone:** Validated & Shareable
+**Departments:** [engineering, qa]
+**Size:** large
+**Gate:** no-gate
+**Depends-on:** [TASK-033]
+
+**Spec:** The system SHALL run Optinum's synthesis pipeline against SWE-bench Verified instances and record: (a) whether Optinum generates a test that would fail on the bug commit, (b) whether that test passes on the fix commit. This is the empirical proof of the core thesis.
+
+**Context:**
+SWE-bench Verified = 500 human-validated Python bug instances across 12 OSS repos (Django, Flask, Requests, SymPy, Matplotlib, scikit-learn, Sphinx, Astropy, Pylint, Xarray, Seaborn, SciPy). Each instance has a base_commit (bug), fix_commit (fix), and problem_statement. Optinum runs against the diff between base and fix commits.
+
+**For TypeScript:** SWE-PolyBench (Amazon Science, 729 TypeScript instances) is the second benchmark — runs after Python is verified.
+
+**Token optimization (target <2M):**
+1. Filter to instances matching our 5 catalog change types (~250 of 500)
+2. Run dry-run synthesis first (generate tests, don't execute) — ~3000 tokens/instance
+3. Execute only against instances where synthesis produced relevant tests
+4. Cache repo context across instances from the same repo (Django has ~150 instances)
+
+**Best 15 pilot instances (run first to validate pipeline):**
+- django__django-13556 — contract-change: None callback handling (transaction.on_commit)
+- django__django-15766 — new-write-endpoint: missing robust on_commit handler
+- django__django-10973 — type-widening: password type conversion bug
+- django__django-7530 — schema-migration: missing migration consistency check
+- sympy__sympy-20590 — contract-change: parameter contract issue
+- matplotlib__matplotlib-24362 — contract-change: boolean field rejection (sharex/sharey)
+- matplotlib__matplotlib-23987 — type-widening: optional property access
+- psf__requests-1724 — contract-change: Unicode method name UnicodeDecodeError
+- sphinx-doc__sphinx-8265 — cascade+type-widening: empty tuple boundary case
+- django__django-15695 — cascade-change: missing signal/event emission on delete
+- pallets__flask-4045 — contract-change: route parameter type mismatch
+- django__django-14382 — new-write-endpoint: missing transaction on multi-step write
+- scikit-learn__scikit-learn-14141 — type-widening: return type widened to include None
+- django__django-13321 — schema-migration: model field change without migration
+- sympy__sympy-18199 — cascade-change: side-effect dropped during refactor
+
+**Scenarios:**
+1. Given a SWE-bench bug commit diff / When Optinum synthesis runs in dry-run mode / Then it generates ≥1 test targeting the exact failure class of the bug
+2. Given the generated test run against the bug commit / When executed / Then it fails (proves Optinum caught the bug)
+3. Given the generated test run against the fix commit / When executed / Then it passes (proves the test is valid, not just always-failing)
+4. Given the full 250-instance filtered run / When complete / Then catch rate ≥60% with <30% false positives — publishable benchmark result
+
+**Artifacts:**
+- `benchmark/swe-bench/results.json` — instance ID, pattern matched, test generated (y/n), fail-on-bug (y/n), pass-on-fix (y/n)
+- `benchmark/swe-bench/pilot-15.md` — narrative results of the 15-instance pilot
+- `benchmark/swe-bench/README.md` — methodology, how to reproduce
+
+**Access method:**
+```python
+from datasets import load_dataset
+sbv = load_dataset('princeton-nlp/SWE-bench_Verified', split='test')
+```
+Or JSON: https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified/resolve/main/data/test-00000-of-00001.parquet
+
+**Produces:** Empirical catch rate on 250+ real-world bugs; publishable benchmark; proof that Optinum catches bugs AI unit tests miss on actual OSS code
+
+**Verify:** results.json exists with ≥15 pilot entries; catch rate calculated; pilot-15.md narrative explains what was caught and what was missed
