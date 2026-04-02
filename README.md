@@ -4,6 +4,8 @@ Diff-scoped integration test generation for AI-written code. Optinum analyzes th
 
 Unit tests pass on both sides. Optinum catches what breaks in between.
 
+**62 blind spot tests generated in one run against 3 production AI-native repos. 60% of SWE-bench AI-written test suites missed the exact boundary Optinum targets.**
+
 ## What It Does
 
 1. Parses the AST blast radius of changed TypeScript files
@@ -152,6 +154,11 @@ The test synthesizer runs in an isolated subprocess (fresh context). It receives
 
 **How do I get more blind spot coverage?**
 Ensure `optinum init` correctly detects your schema format. Zod and Pydantic schemas give the synthesizer structured contract information to probe. OpenAPI fallback is less precise.
+
+## Evidence
+
+- [External Demo](docs/external-demo-summary.md) — 62 blind spot tests across vercel/ai-chatbot, OpenHands, langchain in < 2 min
+- [SWE-bench Pilot](docs/swe-bench-pilot-15.md) — 15/15 catalog coverage, 9/15 AI gap hits (60%) against SWE-bench Verified
 
 ## Docs
 
