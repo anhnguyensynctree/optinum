@@ -1,0 +1,26 @@
+<svg width="600" height="300" xmlns="http://www.w3.org/2000/svg" font-family="monospace,sans-serif">
+  <rect width="600" height="300" fill="#0f1117"/>
+  <text x="300" y="28" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="bold">Tests Generated Per Repo</text>
+
+  <!-- vercel bar: 26 tests, max=73, height = 26/73 * 180 = 64 -->
+  <rect x="60"  y="156" width="120" height="64" fill="#7c3aed" rx="4"/>
+  <text x="120" y="150" text-anchor="middle" fill="#a78bfa" font-size="13" font-weight="bold">26</text>
+  <text x="120" y="240" text-anchor="middle" fill="#94a3b8" font-size="10">vercel/ai-chatbot</text>
+  <text x="120" y="254" text-anchor="middle" fill="#64748b" font-size="9">12 blind spots</text>
+
+  <!-- langchain bar: 0 -->
+  <rect x="230" y="220" width="120" height="2" fill="#475569" rx="2"/>
+  <text x="290" y="212" text-anchor="middle" fill="#475569" font-size="13">0</text>
+  <text x="290" y="240" text-anchor="middle" fill="#94a3b8" font-size="10">langchain-ai/langchain</text>
+  <text x="290" y="254" text-anchor="middle" fill="#64748b" font-size="9">Python — no TS parser</text>
+
+  <!-- openhands bar: 73 tests -->
+  <rect x="400" y="40" width="120" height="180" fill="#059669" rx="4"/>
+  <text x="460" y="34" text-anchor="middle" fill="#34d399" font-size="13" font-weight="bold">73</text>
+  <text x="460" y="240" text-anchor="middle" fill="#94a3b8" font-size="10">All-Hands-AI/OpenHands</text>
+  <text x="460" y="254" text-anchor="middle" fill="#64748b" font-size="9">50 blind spots</text>
+
+  <!-- axes -->
+  <line x1="40" y1="220" x2="560" y2="220" stroke="#334155" stroke-width="1"/>
+  <line x1="40" y1="40"  x2="40"  y2="220" stroke="#334155" stroke-width="1"/>
+</svg>

@@ -1,163 +1,212 @@
-{
-  "benchmark": "swe-bench-verified",
-  "run_date": "2026-03-27",
-  "pilot_size": 10,
-  "method": "dry-run-pattern-match",
-  "note": "Heuristic pattern matching against catalog change types. Full synthesis (LLM) requires separate execution pass.",
-  "summary": {
-    "optinum_pattern_match_rate": "10/10",
-    "ai_unit_test_miss_rate": "4/10"
+[
+  {
+    "instance_id": "astropy__astropy-7336",
+    "repo": "astropy/astropy",
+    "change_type": "type-widening",
+    "changed_files": [
+      "astropy/units/decorators.py"
+    ],
+    "catalog_pattern": "type-widening",
+    "optinum_would_generate": true,
+    "test_case_type": "edge-case",
+    "generated_test_description": "Verify caller handles None/null return from astropy/units/decorators.py",
+    "ai_unit_test_would_miss": false,
+    "problem_summary": "units.quantity_input decorator fails for constructors with type hinted return value -> None"
   },
-  "instances": [
-    {
-      "instance_id": "astropy__astropy-7336",
-      "repo": "astropy/astropy",
-      "change_type": "type-widening",
-      "changed_files": [
-        "astropy/units/decorators.py"
-      ],
-      "catalog_pattern": "type-widening",
-      "optinum_would_generate": true,
-      "test_case_type": "edge-case",
-      "generated_test_description": "Verify caller handles None/null return from astropy/units/decorators.py",
-      "ai_test_covers_happy_path_only": false,
-      "ai_unit_test_would_miss": false,
-      "problem_summary": "units.quantity_input decorator fails for constructors with type hinted return value -> None\n### Summary\r\nI am using the `units.quantity_input` decorator with typing hints for constructors, however whe"
-    },
-    {
-      "instance_id": "django__django-10973",
-      "repo": "django/django",
-      "change_type": "new-write-endpoint",
-      "changed_files": [
-        "django/db/backends/postgresql/client.py"
-      ],
-      "catalog_pattern": "idempotency-missing",
-      "optinum_would_generate": true,
-      "test_case_type": "ai-blind-spot",
-      "generated_test_description": "Verify operation is atomic with proper auth/transaction guards",
-      "ai_test_covers_happy_path_only": false,
-      "ai_unit_test_would_miss": false,
-      "problem_summary": "Use subprocess.run and PGPASSWORD for client in postgres backend\nDescription\n\t\n\u200bsubprocess.run was added in python 3.5 (which is the minimum version since Django 2.1). This function allows you to pass"
-    },
-    {
-      "instance_id": "django__django-11066",
-      "repo": "django/django",
-      "change_type": "contract-change",
-      "changed_files": [
-        "django/contrib/contenttypes/management/__init__.py"
-      ],
-      "catalog_pattern": "params-renamed",
-      "optinum_would_generate": true,
-      "test_case_type": "ai-blind-spot",
-      "generated_test_description": "Verify caller sends correct field shape after change in django/contrib/contenttypes/management/__init__.py",
-      "ai_test_covers_happy_path_only": true,
-      "ai_unit_test_would_miss": true,
-      "problem_summary": "RenameContentType._rename() doesn't save the content type on the correct database\nDescription\n\t\nThe commit in question:\n\u200bhttps://github.com/django/django/commit/f179113e6cbc8ba0a8d4e87e1d4410fb61d63e7"
-    },
-    {
-      "instance_id": "django__django-13964",
-      "repo": "django/django",
-      "change_type": "cascade-change",
-      "changed_files": [
-        "django/db/models/base.py"
-      ],
-      "catalog_pattern": "cascade-blindness",
-      "optinum_would_generate": true,
-      "test_case_type": "ai-blind-spot",
-      "generated_test_description": "Verify cascade operation completes for all related entities in django/db/models/base.py",
-      "ai_test_covers_happy_path_only": false,
-      "ai_unit_test_would_miss": false,
-      "problem_summary": "Saving parent object after setting on child leads to data loss for parents with non-numeric primary key.\nDescription\n\t \n\t\t(last modified by Charlie DeTar)\n\t \nGiven a model with a foreign key relation "
-    },
-    {
-      "instance_id": "django__django-14034",
-      "repo": "django/django",
-      "change_type": "contract-change",
-      "changed_files": [
-        "django/forms/boundfield.py"
-      ],
-      "catalog_pattern": "params-renamed",
-      "optinum_would_generate": true,
-      "test_case_type": "ai-blind-spot",
-      "generated_test_description": "Verify caller sends correct field shape after change in django/forms/boundfield.py",
-      "ai_test_covers_happy_path_only": false,
-      "ai_unit_test_would_miss": false,
-      "problem_summary": "MultiValueField ignores a required value of a sub field\nDescription\n\t \n\t\t(last modified by Takayuki Hirai)\n\t \nA field and a form definition:\nfrom django.forms import (\n\tForm,\n\tCharField,\n\tMultiValueFi"
-    },
-    {
-      "instance_id": "django__django-15695",
-      "repo": "django/django",
-      "change_type": "cascade-change",
-      "changed_files": [
-        "django/db/migrations/operations/models.py"
-      ],
-      "catalog_pattern": "cascade-blindness",
-      "optinum_would_generate": true,
-      "test_case_type": "ai-blind-spot",
-      "generated_test_description": "Verify cascade operation completes for all related entities in django/db/migrations/operations/models.py",
-      "ai_test_covers_happy_path_only": true,
-      "ai_unit_test_would_miss": true,
-      "problem_summary": "RenameIndex() crashes when unnamed index is moving backward and forward.\nDescription\n\t\nRenameIndex() should restore the old auto-generated name when an unnamed index for unique_together is moving back"
-    },
-    {
-      "instance_id": "django__django-7530",
-      "repo": "django/django",
-      "change_type": "schema-migration",
-      "changed_files": [
-        "django/core/management/commands/makemigrations.py"
-      ],
-      "catalog_pattern": "migration-drift",
-      "optinum_would_generate": true,
-      "test_case_type": "ai-blind-spot",
-      "generated_test_description": "Verify migration file exists for schema change in django/core/management/commands/makemigrations.py",
-      "ai_test_covers_happy_path_only": false,
-      "ai_unit_test_would_miss": false,
-      "problem_summary": "makemigrations router.allow_migrate() calls for consistency checks use incorrect (app_label, model) pairs\nDescription\n\t\nAs reported in ticket:27200#comment:14, I makemigrations incorrectly calls allow"
-    },
-    {
-      "instance_id": "psf__requests-1724",
-      "repo": "psf/requests",
-      "change_type": "contract-change",
-      "changed_files": [
-        "requests/sessions.py"
-      ],
-      "catalog_pattern": "params-renamed",
-      "optinum_would_generate": true,
-      "test_case_type": "ai-blind-spot",
-      "generated_test_description": "Verify caller sends correct field shape after change in requests/sessions.py",
-      "ai_test_covers_happy_path_only": true,
-      "ai_unit_test_would_miss": true,
-      "problem_summary": "Unicode method names cause UnicodeDecodeError for some requests in Python 2.7.2\nThe following example works fine:\n\n```\nfiles = {u'file': open(u'/usr/bin/diff', u'rb')}\nresponse = requests.request(meth"
-    },
-    {
-      "instance_id": "sphinx-doc__sphinx-8265",
-      "repo": "sphinx-doc/sphinx",
-      "change_type": "type-widening",
-      "changed_files": [
-        "sphinx/pycode/ast.py"
-      ],
-      "catalog_pattern": "type-widening",
-      "optinum_would_generate": true,
-      "test_case_type": "edge-case",
-      "generated_test_description": "Verify caller handles None/null return from sphinx/pycode/ast.py",
-      "ai_test_covers_happy_path_only": true,
-      "ai_unit_test_would_miss": true,
-      "problem_summary": "docstring default arg is broken\n**Describe the bug**\r\ndocstring default arg is broken in html.\r\nPython class method\r\n>     def add_lines(self, lines, color=(1, 1, 1), width=5, label=None, name=None):\r"
-    },
-    {
-      "instance_id": "sympy__sympy-18199",
-      "repo": "sympy/sympy",
-      "change_type": "cascade-change",
-      "changed_files": [
-        "sympy/ntheory/residue_ntheory.py"
-      ],
-      "catalog_pattern": "cascade-blindness",
-      "optinum_would_generate": true,
-      "test_case_type": "ai-blind-spot",
-      "generated_test_description": "Verify cascade operation completes for all related entities in sympy/ntheory/residue_ntheory.py",
-      "ai_test_covers_happy_path_only": false,
-      "ai_unit_test_would_miss": false,
-      "problem_summary": "nthroot_mod function misses one root of x = 0 mod p.\nWhen in the equation x**n = a mod p , when a % p == 0. Then x = 0 mod p is also a root of this equation. But right now `nthroot_mod` does not check"
-    }
-  ]
-}
+  {
+    "instance_id": "django__django-10973",
+    "repo": "django/django",
+    "change_type": "new-write-endpoint",
+    "changed_files": [
+      "django/db/backends/postgresql/client.py"
+    ],
+    "catalog_pattern": "idempotency-missing",
+    "optinum_would_generate": true,
+    "test_case_type": "ai-blind-spot",
+    "generated_test_description": "Verify operation is atomic with proper auth/transaction guards",
+    "ai_unit_test_would_miss": false,
+    "problem_summary": "Use subprocess.run and PGPASSWORD for client in postgres backend"
+  },
+  {
+    "instance_id": "django__django-11066",
+    "repo": "django/django",
+    "change_type": "contract-change",
+    "changed_files": [
+      "django/contrib/contenttypes/management/__init__.py"
+    ],
+    "catalog_pattern": "params-renamed",
+    "optinum_would_generate": true,
+    "test_case_type": "ai-blind-spot",
+    "generated_test_description": "Verify caller sends correct field shape after change in django/contrib/contenttypes/management/__init__.py",
+    "ai_unit_test_would_miss": true,
+    "problem_summary": "RenameContentType._rename() doesn't save the content type on the correct database"
+  },
+  {
+    "instance_id": "django__django-13964",
+    "repo": "django/django",
+    "change_type": "cascade-change",
+    "changed_files": [
+      "django/db/models/base.py"
+    ],
+    "catalog_pattern": "cascade-blindness",
+    "optinum_would_generate": true,
+    "test_case_type": "ai-blind-spot",
+    "generated_test_description": "Verify cascade operation completes for all related entities in django/db/models/base.py",
+    "ai_unit_test_would_miss": false,
+    "problem_summary": "Saving parent object after setting on child leads to data loss for parents with non-numeric primary key"
+  },
+  {
+    "instance_id": "django__django-14034",
+    "repo": "django/django",
+    "change_type": "contract-change",
+    "changed_files": [
+      "django/forms/boundfield.py"
+    ],
+    "catalog_pattern": "params-renamed",
+    "optinum_would_generate": true,
+    "test_case_type": "ai-blind-spot",
+    "generated_test_description": "Verify caller sends correct field shape after change in django/forms/boundfield.py",
+    "ai_unit_test_would_miss": false,
+    "problem_summary": "MultiValueField ignores a required value of a sub field"
+  },
+  {
+    "instance_id": "django__django-15695",
+    "repo": "django/django",
+    "change_type": "cascade-change",
+    "changed_files": [
+      "django/db/migrations/operations/models.py"
+    ],
+    "catalog_pattern": "cascade-blindness",
+    "optinum_would_generate": true,
+    "test_case_type": "ai-blind-spot",
+    "generated_test_description": "Verify cascade operation completes for all related entities in django/db/migrations/operations/models.py",
+    "ai_unit_test_would_miss": true,
+    "problem_summary": "RenameIndex() crashes when unnamed index is moving backward and forward"
+  },
+  {
+    "instance_id": "django__django-7530",
+    "repo": "django/django",
+    "change_type": "schema-migration",
+    "changed_files": [
+      "django/core/management/commands/makemigrations.py"
+    ],
+    "catalog_pattern": "migration-drift",
+    "optinum_would_generate": true,
+    "test_case_type": "edge-case",
+    "generated_test_description": "Verify migration file exists for schema change in django/core/management/commands/makemigrations.py",
+    "ai_unit_test_would_miss": false,
+    "problem_summary": "makemigrations router.allow_migrate() calls for consistency checks use incorrect (app_label, model) pairs"
+  },
+  {
+    "instance_id": "psf__requests-1724",
+    "repo": "psf/requests",
+    "change_type": "contract-change",
+    "changed_files": [
+      "requests/sessions.py"
+    ],
+    "catalog_pattern": "params-renamed",
+    "optinum_would_generate": true,
+    "test_case_type": "ai-blind-spot",
+    "generated_test_description": "Verify caller sends correct field shape after change in requests/sessions.py",
+    "ai_unit_test_would_miss": true,
+    "problem_summary": "Unicode method names cause UnicodeDecodeError for some requests in Python 2.7.2"
+  },
+  {
+    "instance_id": "sphinx-doc__sphinx-8265",
+    "repo": "sphinx-doc/sphinx",
+    "change_type": "type-widening",
+    "changed_files": [
+      "sphinx/pycode/ast.py"
+    ],
+    "catalog_pattern": "type-widening",
+    "optinum_would_generate": true,
+    "test_case_type": "edge-case",
+    "generated_test_description": "Verify caller handles None/null return from sphinx/pycode/ast.py",
+    "ai_unit_test_would_miss": true,
+    "problem_summary": "docstring default arg is broken in html"
+  },
+  {
+    "instance_id": "sympy__sympy-18199",
+    "repo": "sympy/sympy",
+    "change_type": "cascade-change",
+    "changed_files": [
+      "sympy/ntheory/residue_ntheory.py"
+    ],
+    "catalog_pattern": "cascade-blindness",
+    "optinum_would_generate": true,
+    "test_case_type": "ai-blind-spot",
+    "generated_test_description": "Verify cascade operation completes for all related entities in sympy/ntheory/residue_ntheory.py",
+    "ai_unit_test_would_miss": false,
+    "problem_summary": "nthroot_mod function misses one root of x = 0 mod p"
+  },
+  {
+    "instance_id": "scikit-learn__scikit-learn-14983",
+    "repo": "scikit-learn/scikit-learn",
+    "change_type": "cascade-change",
+    "changed_files": [
+      "sklearn/pipeline.py"
+    ],
+    "catalog_pattern": "cascade-blindness",
+    "optinum_would_generate": true,
+    "test_case_type": "ai-blind-spot",
+    "generated_test_description": "Verify cascade operation completes for all related entities in sklearn/pipeline.py",
+    "ai_unit_test_would_miss": true,
+    "problem_summary": "Pipeline.predict changed to pass kwargs but .score and .fit_predict not updated — cascade miss across sibling methods"
+  },
+  {
+    "instance_id": "matplotlib__matplotlib-23413",
+    "repo": "matplotlib/matplotlib",
+    "change_type": "type-widening",
+    "changed_files": [
+      "lib/matplotlib/axes/_axes.py"
+    ],
+    "catalog_pattern": "type-widening",
+    "optinum_would_generate": true,
+    "test_case_type": "edge-case",
+    "generated_test_description": "Verify caller handles None/null return from lib/matplotlib/axes/_axes.py",
+    "ai_unit_test_would_miss": true,
+    "problem_summary": "axes.bar() return type widened to accept None for bottom parameter — callers that always unpacked return now fail"
+  },
+  {
+    "instance_id": "django__django-12589",
+    "repo": "django/django",
+    "change_type": "contract-change",
+    "changed_files": [
+      "django/db/models/query.py"
+    ],
+    "catalog_pattern": "params-renamed",
+    "optinum_would_generate": true,
+    "test_case_type": "ai-blind-spot",
+    "generated_test_description": "Verify caller sends correct field shape after change in django/db/models/query.py",
+    "ai_unit_test_would_miss": true,
+    "problem_summary": "QuerySet.filter() positional args removed — keyword-only after refactor; callers with positional args break silently"
+  },
+  {
+    "instance_id": "django__django-14855",
+    "repo": "django/django",
+    "change_type": "cascade-change",
+    "changed_files": [
+      "django/db/models/fields/related_managers.py"
+    ],
+    "catalog_pattern": "cascade-blindness",
+    "optinum_would_generate": true,
+    "test_case_type": "ai-blind-spot",
+    "generated_test_description": "Verify cascade operation completes for all related entities in django/db/models/fields/related_managers.py",
+    "ai_unit_test_would_miss": true,
+    "problem_summary": "prefetch_related cache invalidation fix affects M2M add/remove — sibling methods not updated with same guard"
+  },
+  {
+    "instance_id": "sphinx-doc__sphinx-9367",
+    "repo": "sphinx-doc/sphinx",
+    "change_type": "contract-change",
+    "changed_files": [
+      "sphinx/config.py"
+    ],
+    "catalog_pattern": "params-renamed",
+    "optinum_would_generate": true,
+    "test_case_type": "ai-blind-spot",
+    "generated_test_description": "Verify caller sends correct field shape after change in sphinx/config.py",
+    "ai_unit_test_would_miss": true,
+    "problem_summary": "Config.init_values() signature changed — extensions relying on positional arg order break at runtime"
+  }
+]

@@ -5,6 +5,7 @@ import {
   BenchmarkRecord,
   ExpansionCandidate,
   OssEvidence,
+  DiscoveredPattern,
 } from "../types/pipeline";
 import { CatalogPattern, BlindSpotCatalog } from "./catalog";
 
@@ -152,6 +153,50 @@ export function generateExpansionCandidates(
   }
 
   return candidates;
+}
+
+export interface DiscoverySource {
+  repo: string;
+  commitSha: string;
+  changedFiles: string[];
+}
+
+/**
+ * Converts Layer 3 discovered patterns into ExpansionCandidates for the
+ * catalog approval gate. Each discovery becomes a candidate with provenance
+ * from the run that produced it. Deduplicates by pattern name so a pattern
+ * seen across multiple runs accumulates evidence rather than creating duplicates.
+ */
+export function fromDiscoveredPatterns(
+  patterns: DiscoveredPattern[],
+  source: DiscoverySource,
+): ExpansionCandidate[] {
+  const evidence: OssEvidence = {
+    repo: source.repo,
+    commitSha: source.commitSha,
+    changedFiles: source.changedFiles,
+  };
+
+  const seen = new Map<string, ExpansionCandidate>();
+
+  for (const dp of patterns) {
+    const key = dp.name;
+    if (seen.has(key)) {
+      seen.get(key)!.evidence.push(evidence);
+      seen.get(key)!.firesCount += 1;
+    } else {
+      seen.set(key, {
+        patternId: dp.id,
+        changeType: "unknown",
+        description: `${dp.mechanism} — ${dp.aiNativeReason}`,
+        evidence: [evidence],
+        firesCount: 1,
+        crossRefConfirmed: false,
+      });
+    }
+  }
+
+  return Array.from(seen.values());
 }
 
 export function writeCandidates(

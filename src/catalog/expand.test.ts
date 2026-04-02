@@ -3,8 +3,16 @@ import { describe, it } from "node:test";
 import * as os from "os";
 import * as fs from "fs";
 import * as path from "path";
-import { generateExpansionCandidates, applyApprovedCandidates } from "./expand";
-import { BenchmarkRecord, ExpansionCandidate } from "../types/pipeline";
+import {
+  generateExpansionCandidates,
+  applyApprovedCandidates,
+  fromDiscoveredPatterns,
+} from "./expand";
+import {
+  BenchmarkRecord,
+  ExpansionCandidate,
+  DiscoveredPattern,
+} from "../types/pipeline";
 import { CatalogPattern, BlindSpotCatalog } from "./catalog";
 
 // ---------------------------------------------------------------------------
@@ -185,6 +193,131 @@ describe("generateExpansionCandidates", () => {
     assert.ok(pattern, "pattern should still exist");
     assert.equal(pattern.provisional, true, "provisional should not change");
     assert.equal(pattern.ossEvidence, null, "ossEvidence should remain null");
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+
+  // -------------------------------------------------------------------------
+  // fromDiscoveredPatterns: Layer 3 → ExpansionCandidate
+  // -------------------------------------------------------------------------
+
+  it("fromDiscoveredPatterns converts a single discovery into an ExpansionCandidate", () => {
+    const patterns: DiscoveredPattern[] = [
+      {
+        id: "dp-001",
+        name: "unauthenticated-trigger-endpoint",
+        mechanism:
+          "New POST endpoint accepts any caller without checking Authorization header.",
+        aiNativeReason: "AI modelled the operation, not the security boundary.",
+      },
+    ];
+
+    const candidates = fromDiscoveredPatterns(patterns, {
+      repo: "am225723/quoagent",
+      commitSha: "pr33",
+      changedFiles: ["src/api/run/route.ts"],
+    });
+
+    assert.equal(candidates.length, 1, "Should produce one candidate");
+    const c = candidates[0];
+    assert.equal(c.patternId, "dp-001");
+    assert.equal(c.firesCount, 1);
+    assert.equal(
+      c.crossRefConfirmed,
+      false,
+      "Layer 3 discovery is not yet cross-ref confirmed",
+    );
+    assert.equal(c.evidence.length, 1);
+    assert.equal(c.evidence[0].repo, "am225723/quoagent");
+    assert.ok(
+      c.description.includes("New POST endpoint"),
+      "description should embed mechanism",
+    );
+  });
+
+  it("fromDiscoveredPatterns deduplicates patterns with the same name across multiple discoveries", () => {
+    const patterns: DiscoveredPattern[] = [
+      {
+        id: "dp-001",
+        name: "unauthenticated-trigger-endpoint",
+        mechanism: "Endpoint has no auth check.",
+        aiNativeReason: "AI added the route outside auth middleware.",
+      },
+      {
+        id: "dp-002",
+        name: "unauthenticated-trigger-endpoint", // same name — should deduplicate
+        mechanism: "Endpoint has no auth check — second instance.",
+        aiNativeReason: "Same blind spot, different route.",
+      },
+    ];
+
+    const candidates = fromDiscoveredPatterns(patterns, {
+      repo: "example/repo",
+      commitSha: "abc",
+      changedFiles: ["src/api/approve/route.ts"],
+    });
+
+    assert.equal(
+      candidates.length,
+      1,
+      "Same-name patterns must deduplicate to a single candidate",
+    );
+    assert.equal(
+      candidates[0].firesCount,
+      2,
+      "firesCount must be 2 for deduped pattern",
+    );
+  });
+
+  it("fromDiscoveredPatterns produces candidates that can flow through applyApprovedCandidates to grow the catalog", () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "expand-layer3-"));
+    const candidatesPath = path.join(tmpDir, "candidates.json");
+    const catalogPath = path.join(tmpDir, "catalog.json");
+
+    const initialCatalog: BlindSpotCatalog = {
+      version: "0.1.0",
+      patterns: [CONTRACT_PATTERN],
+    };
+    fs.writeFileSync(catalogPath, JSON.stringify(initialCatalog, null, 2));
+
+    const patterns: DiscoveredPattern[] = [
+      {
+        id: "dp-001",
+        name: "unauthenticated-trigger-endpoint",
+        mechanism: "New route with no auth middleware.",
+        aiNativeReason: "AI did not see an auth layer in the diff context.",
+      },
+    ];
+
+    const candidates = fromDiscoveredPatterns(patterns, {
+      repo: "am225723/quoagent",
+      commitSha: "pr33",
+      changedFiles: ["src/api/run/route.ts"],
+    });
+
+    // Approve the candidate
+    const approved = candidates.map((c) => ({ ...c, approved: true }));
+    fs.writeFileSync(candidatesPath, JSON.stringify(approved, null, 2));
+
+    applyApprovedCandidates(candidatesPath, catalogPath);
+
+    const updated = JSON.parse(
+      fs.readFileSync(catalogPath, "utf-8"),
+    ) as BlindSpotCatalog;
+
+    assert.equal(
+      updated.patterns.length,
+      2,
+      "Catalog must grow from 1 to 2 patterns after Layer 3 approval",
+    );
+
+    const newPattern = updated.patterns.find((p) => p.id === "dp-001");
+    assert.ok(newPattern, "New pattern must exist in catalog");
+    assert.equal(
+      newPattern.provisional,
+      false,
+      "Approved pattern must not be provisional",
+    );
 
     fs.rmSync(tmpDir, { recursive: true });
   });

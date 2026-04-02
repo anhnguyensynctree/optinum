@@ -24,6 +24,8 @@ export interface CatalogPattern {
   provisional: boolean;
   fixtureRef: string | null;
   severity: "critical" | "high" | "medium" | "low";
+  /** How this pattern entered the catalog */
+  source?: "layer3-discovery" | "benchmark" | "manual";
 }
 
 export interface BlindSpotCatalog {

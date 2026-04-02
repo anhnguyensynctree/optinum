@@ -58,6 +58,15 @@ export const CaseTypeSchema = z.enum([
 ]);
 export type CaseType = z.infer<typeof CaseTypeSchema>;
 
+// A pattern discovered by Layer 3 from first-principles diff reasoning
+export const DiscoveredPatternSchema = z.object({
+  id: z.string(), // e.g. "dp-001"
+  name: z.string(), // e.g. "async-state-invalidation"
+  mechanism: z.string(), // what technically fails
+  aiNativeReason: z.string(), // why AI is specifically blind to this
+});
+export type DiscoveredPattern = z.infer<typeof DiscoveredPatternSchema>;
+
 // A single synthesized test
 export const SynthesizedTestSchema = z.object({
   testId: z.string(),
@@ -68,6 +77,7 @@ export const SynthesizedTestSchema = z.object({
   expectedShape: z.record(z.string(), z.unknown()).optional(),
   blindSpotPattern: z.string().optional(),
   expectedResult: z.enum(["PASS", "FAIL"]).optional(),
+  discoveredPattern: DiscoveredPatternSchema.optional(),
 });
 export type SynthesizedTest = z.infer<typeof SynthesizedTestSchema>;
 
