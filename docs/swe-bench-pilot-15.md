@@ -1,6 +1,6 @@
-# SWE-bench Pilot — 15 Instances
+# SWE-bench Pilot — 16 Instances
 
-**Date:** 2026-04-01 | **Method:** Dry-run pattern classification | **Catch rate:** 15/15 | **AI gap hits:** 9/15
+**Date:** 2026-04-01 | **Method:** Dry-run pattern classification | **Catch rate:** 16/16 | **AI gap hits:** 10/16
 
 ---
 
@@ -19,11 +19,11 @@ Three signals per instance:
 
 | Signal | Count | Rate |
 |---|---|---|
-| Catalog matches | 15/15 | 100% |
-| AI test gap hits | 9/15 | 60% |
-| False positives | 0/15 | 0% (V1 dry-run) |
+| Catalog matches | 16/16 | 100% |
+| AI test gap hits | 10/16 | 62.5% |
+| False positives | 0/16 | 0% (V1 dry-run) |
 
-All 15 instances matched at least one catalog pattern. 9 of 15 were cases where the AI wrote tests but missed the exact failure boundary Optinum targets.
+All 16 instances matched at least one catalog pattern. 10 of 16 were cases where the AI wrote tests but missed the exact failure boundary Optinum targets.
 
 ---
 
@@ -53,6 +53,8 @@ All 15 instances matched at least one catalog pattern. 9 of 15 were cases where 
 
 **django__django-14855** — `prefetch_related` cache fix missed M2M `add/remove` siblings. Change: `cascade-change`. Catalog hit: `cascade-blindness`. AI gap: yes — primary path tested, sibling invalidation was not.
 
+**langchain-ai__langchain-35871** — `dispatch` builds `{"path": path}` but both `_handle_rename` implementations read `args["old_path"]` — KeyError on every rename. Two classes, same flaw, written in separate AI sessions. Change: `cascade-change`. Catalog hit: `cascade-blindness`. AI gap: yes — each AI session tested its own class in isolation; no cross-class integration test caught the shared contract mismatch.
+
 ### Type-Widening Instances (3)
 
 **astropy__astropy-7336** — `quantity_input` decorator failed for `-> None` constructors. Change: `type-widening`. Catalog hit: `type-widening`. AI gap: no — constructor return type tested by human.
@@ -73,11 +75,11 @@ All 15 instances matched at least one catalog pattern. 9 of 15 were cases where 
 
 ## What This Proves
 
-**15/15 catalog coverage.** Every instance in this pilot maps to a pattern Optinum already has. The catalog is not missing classes for these common Python framework bugs.
+**16/16 catalog coverage.** Every instance in this pilot maps to a pattern Optinum already has. The catalog is not missing classes for these common Python framework bugs.
 
-**9/15 (60%) AI gap rate.** The failure pattern is consistent: AI-written tests cover the happy path and the primary mutation. The boundary — sibling methods, reverse paths, caller shape after rename, widened-return callers — is left untested.
+**10/16 (62.5%) AI gap rate.** The failure pattern is consistent: AI-written tests cover the happy path and the primary mutation. The boundary — sibling methods, reverse paths, caller shape after rename, widened-return callers — is left untested.
 
-**The gap is not random.** Contract-change and cascade-change account for 7 of the 9 AI gap hits. These are exactly the change types where AI session context cuts off before the downstream effect is visible.
+**The gap is not random.** Contract-change and cascade-change account for 8 of the 10 AI gap hits. These are exactly the change types where AI session context cuts off before the downstream effect is visible. The langchain instance is the clearest example: two classes with the same design flaw, written in separate AI sessions, each tested in isolation — neither test caught the shared contract mismatch.
 
 ---
 

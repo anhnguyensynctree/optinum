@@ -14,6 +14,8 @@ import { join } from "path";
 import { queryByChangeType } from "../../src/catalog/catalog";
 import type { ChangeType } from "../../src/types/pipeline";
 
+export type SynthesisMode = "catalog-classification" | "ast-classification";
+
 const RESULTS_PATH = join(__dirname, "results.json");
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -38,6 +40,8 @@ export interface BenchmarkResult {
   generated_test_description: string | null;
   ai_unit_test_would_miss: boolean;
   problem_summary: string;
+  synthesis_mode: SynthesisMode;
+  synthesized_test_count?: number;
 }
 
 export interface RunSummary {
@@ -48,6 +52,7 @@ export interface RunSummary {
   catch_rate: string;
   ai_gap_rate: string;
   false_positive_rate: string;
+  synthesis_mode: SynthesisMode;
 }
 
 // ─── Pilot Instances ─────────────────────────────────────────────────────────
@@ -186,6 +191,16 @@ const PILOT_INSTANCES: SWEInstance[] = [
       "Config.init_values() signature changed — extensions relying on positional arg order break at runtime",
     ai_unit_test_would_miss: true,
   },
+  // Instance 16 — external fixture
+  {
+    instance_id: "langchain-ai__langchain-35871",
+    repo: "langchain-ai/langchain",
+    change_type: "cascade-change",
+    changed_files: ["libs/core/langchain_core/callbacks/manager.py"],
+    problem_summary:
+      'dispatch builds {"path": path} but both _handle_rename implementations read args["old_path"] — KeyError on every rename. Two classes, same flaw, written in separate AI sessions.',
+    ai_unit_test_would_miss: true,
+  },
 ];
 
 // ─── filterInstances ──────────────────────────────────────────────────────────
@@ -203,7 +218,10 @@ export function filterInstances(instances: SWEInstance[]): SWEInstance[] {
 
 // ─── classify ─────────────────────────────────────────────────────────────────
 
-function classifyInstance(inst: SWEInstance): BenchmarkResult {
+function classifyInstance(
+  inst: SWEInstance,
+  synthesisMode: SynthesisMode = "catalog-classification",
+): BenchmarkResult {
   const patterns = queryByChangeType(inst.change_type);
   const catalogPattern = patterns[0] ?? null;
   const wouldGenerate = catalogPattern !== null;
@@ -220,7 +238,7 @@ function classifyInstance(inst: SWEInstance): BenchmarkResult {
     description = buildDescription(inst, catalogPattern.id);
   }
 
-  return {
+  const result: BenchmarkResult = {
     instance_id: inst.instance_id,
     repo: inst.repo,
     change_type: inst.change_type,
@@ -231,7 +249,16 @@ function classifyInstance(inst: SWEInstance): BenchmarkResult {
     generated_test_description: description,
     ai_unit_test_would_miss: inst.ai_unit_test_would_miss,
     problem_summary: inst.problem_summary,
+    synthesis_mode: synthesisMode,
   };
+
+  if (synthesisMode === "ast-classification" && wouldGenerate) {
+    // AST-classification mode: record pattern count as synthesized_test_count proxy.
+    // Full LLM synthesis requires Docker (Milestone 3 exec work).
+    result.synthesized_test_count = patterns.length;
+  }
+
+  return result;
 }
 
 function buildDescription(inst: SWEInstance, patternId: string): string {
@@ -254,23 +281,27 @@ function buildDescription(inst: SWEInstance, patternId: string): string {
 // ─── runPilot ─────────────────────────────────────────────────────────────────
 
 /**
- * Run Optinum classification against the 15-instance pilot.
+ * Run Optinum classification against the 16-instance pilot.
  * Writes partial results to results.json after each instance (Script-partial-results).
+ * Pass synthesis: true to enable ast-classification mode (records synthesized_test_count).
  */
 export async function runPilot(
-  opts: { quiet?: boolean } = {},
+  opts: { quiet?: boolean; synthesis?: boolean } = {},
 ): Promise<RunSummary> {
-  const { quiet = false } = opts;
+  const { quiet = false, synthesis = false } = opts;
+  const synthesisMode: SynthesisMode = synthesis
+    ? "ast-classification"
+    : "catalog-classification";
   const results: BenchmarkResult[] = [];
 
   if (!quiet) {
     console.log(
-      `\nOptinum SWE-bench Pilot — ${PILOT_INSTANCES.length} instances\n`,
+      `\nOptinum SWE-bench Pilot — ${PILOT_INSTANCES.length} instances [${synthesisMode}]\n`,
     );
   }
 
   for (const inst of PILOT_INSTANCES) {
-    const result = classifyInstance(inst);
+    const result = classifyInstance(inst, synthesisMode);
     results.push(result);
 
     // Partial write after each instance (Script-partial-results: true)
@@ -296,7 +327,8 @@ export async function runPilot(
     ai_gap_count: aiGapCount,
     catch_rate: `${catchCount}/${results.length}`,
     ai_gap_rate: `${aiGapCount}/${results.length}`,
-    false_positive_rate: "0/15", // V1: pattern match — no execution, no false positives recorded
+    false_positive_rate: `0/${results.length}`, // V1: pattern match — no execution, no false positives recorded
+    synthesis_mode: synthesisMode,
   };
 
   if (!quiet) {
@@ -340,8 +372,9 @@ export async function runFull(): Promise<void> {
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   if (args.includes("--pilot")) {
-    const summary = await runPilot();
-    const passGate = summary.catch_count >= 12; // ≥80% of 15
+    const synthesis = args.includes("--synthesis");
+    const summary = await runPilot({ synthesis });
+    const passGate = summary.catch_count >= 13; // ≥80% of 16
     if (!passGate) {
       console.error(
         `GATE FAIL: catch rate ${summary.catch_rate} is below 80% threshold`,
@@ -351,7 +384,9 @@ async function main(): Promise<void> {
   } else if (args.includes("--full")) {
     await runFull();
   } else {
-    console.error("Usage: npx tsx benchmark/swe-bench/run.ts --pilot | --full");
+    console.error(
+      "Usage: npx tsx benchmark/swe-bench/run.ts --pilot [--synthesis] | --full",
+    );
     process.exit(1);
   }
 }
