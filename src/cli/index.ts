@@ -1,5 +1,6 @@
 import { runTestCommand } from "./commands/test";
 import { runInit } from "./commands/init";
+import { runBenchmarkCommand } from "./commands/benchmark";
 
 const args = process.argv.slice(2);
 const subcommand = args[0];
@@ -44,7 +45,7 @@ async function main(): Promise<void> {
       await runTestCommand(flags);
       break;
     case "benchmark":
-      console.log("benchmark: not yet implemented");
+      await runBenchmarkCommand(flags);
       break;
     case "catalog":
       console.log("catalog: not yet implemented");
