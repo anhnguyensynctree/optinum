@@ -195,7 +195,8 @@
     "synthesis_mode": "ast-classification",
     "ast_derived_change_type": "contract-change",
     "ast_match": false,
-    "synthesized_test_count": 6
+    "synthesized_test_count": 6,
+    "execution_verified": "pending-docker"
   },
   {
     "instance_id": "matplotlib__matplotlib-23413",
