@@ -19,6 +19,15 @@ import type { ChangeType } from "../../src/types/pipeline";
 export type SynthesisMode = "catalog-classification" | "ast-classification";
 
 const RESULTS_PATH = join(__dirname, "results.json");
+const FULL_RESULTS_PATH = join(__dirname, "full-results.json");
+
+const HF_BASE_URL =
+  "https://datasets-server.huggingface.co/rows" +
+  "?dataset=princeton-nlp%2FSWE-bench_Verified" +
+  "&config=default" +
+  "&split=test";
+
+const HF_PAGE_SIZE = 100;
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -554,21 +563,134 @@ export async function runPilot(
   return summary;
 }
 
+// ─── HF fetch helpers ────────────────────────────────────────────────────────
+
+interface HFRow {
+  row_idx: number;
+  row: {
+    instance_id: string;
+    patch: string;
+    repo: string;
+    problem_statement: string;
+    [key: string]: unknown;
+  };
+  truncated_cells: string[];
+}
+
+interface HFResponse {
+  rows: HFRow[];
+  num_rows_total?: number;
+  num_rows_per_page?: number;
+}
+
+async function fetchHFPage(offset: number): Promise<HFResponse> {
+  const url = `${HF_BASE_URL}&offset=${offset}&length=${HF_PAGE_SIZE}`;
+  const res = await fetch(url, { headers: { Accept: "application/json" } });
+  if (!res.ok) {
+    throw new Error(
+      `HF API ${res.status} ${res.statusText} at offset=${offset}`,
+    );
+  }
+  const data = (await res.json()) as HFResponse;
+  if (!Array.isArray(data.rows)) {
+    throw new Error(`HF API missing 'rows' array at offset=${offset}`);
+  }
+  return data;
+}
+
+async function fetchAllHFRows(): Promise<HFRow[]> {
+  const first = await fetchHFPage(0);
+  const total = first.num_rows_total ?? first.rows.length;
+  const all: HFRow[] = [...first.rows];
+  const pageCount = Math.ceil(total / HF_PAGE_SIZE);
+  for (let page = 1; page < pageCount; page++) {
+    const data = await fetchHFPage(page * HF_PAGE_SIZE);
+    all.push(...data.rows);
+  }
+  return all;
+}
+
 // ─── runFull ──────────────────────────────────────────────────────────────────
 
 /**
- * Full 206-instance run (Milestone 3 — Python AST support required).
- * Stub: validates filtering logic and logs the addressable set size.
+ * Full SWE-bench Verified run — fetches all rows from HuggingFace, infers
+ * change_type from each patch, filters to addressable subset, and classifies
+ * with catalog-classification mode (no AST for full set).
+ *
+ * Writes partial results to full-results.json after each batch of 100.
  */
 export async function runFull(): Promise<void> {
-  const addressable = filterInstances(PILOT_INSTANCES);
+  console.log("\nOptinum SWE-bench Full Run — fetching HuggingFace dataset...");
+
+  let rows: HFRow[];
+  try {
+    rows = await fetchAllHFRows();
+    console.log(`  Retrieved ${rows.length} rows from HF API\n`);
+  } catch (err) {
+    console.error(
+      `HF fetch failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    process.exit(1);
+  }
+
+  // Build SWEInstance objects from HF rows by inferring change_type from patch
+  const allInstances: SWEInstance[] = rows
+    .filter((r) => r.row.instance_id && typeof r.row.patch === "string")
+    .map((r) => {
+      const { instance_id, patch, repo, problem_statement } = r.row;
+      const patchStr = patch ?? "";
+      const filePaths = parsePatchFilePaths(patchStr);
+      const changeType = deriveChangeTypeFromPatch(patchStr, filePaths);
+      return {
+        instance_id,
+        repo: repo ?? "",
+        change_type: changeType as ChangeType,
+        changed_files: filePaths,
+        problem_summary: (problem_statement ?? "").slice(0, 120),
+        ai_unit_test_would_miss: false,
+      };
+    });
+
+  const addressable = filterInstances(allInstances);
+
+  console.log(`  Total fetched:   ${allInstances.length}`);
   console.log(
-    `runFull: ${addressable.length}/${PILOT_INSTANCES.length} pilot instances addressable.`,
+    `  Addressable:     ${addressable.length} (change_type maps to catalog pattern)`,
   );
-  console.log(
-    `Full 206-instance run requires Python AST parser (Milestone 3). ` +
-      `Use runPilot() for current results.`,
-  );
+  console.log(`  Non-addressable: ${allInstances.length - addressable.length}`);
+  console.log();
+
+  const results: BenchmarkResult[] = [];
+
+  for (let i = 0; i < addressable.length; i++) {
+    const inst = addressable[i];
+    const result = classifyInstance(inst, "catalog-classification");
+    results.push(result);
+
+    const icon = result.optinum_would_generate ? "✓" : "✗";
+    console.log(
+      `  ${icon} [${i + 1}/${addressable.length}] ${result.instance_id}`,
+    );
+
+    // Partial write after every 100 instances
+    if ((i + 1) % 100 === 0 || i === addressable.length - 1) {
+      writeFileSync(FULL_RESULTS_PATH, JSON.stringify(results, null, 2));
+      console.log(`    [partial write — ${results.length} results saved]`);
+    }
+  }
+
+  const catchCount = results.filter((r) => r.optinum_would_generate).length;
+  const catchRate =
+    results.length > 0
+      ? `${catchCount}/${results.length} (${Math.round((catchCount / results.length) * 100)}%)`
+      : "0/0";
+
+  console.log(`\n── Full Run Summary ─────────────────────────────────`);
+  console.log(`  Total HF rows:   ${rows.length}`);
+  console.log(`  Addressable:     ${addressable.length}`);
+  console.log(`  Catch rate:      ${catchRate}`);
+  console.log(`  Results written: ${FULL_RESULTS_PATH}`);
+  console.log();
 }
 
 // ─── CLI entry ───────────────────────────────────────────────────────────────
