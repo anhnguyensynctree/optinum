@@ -10,6 +10,7 @@ export interface Layer2PromptInput {
   contracts: EndpointContract[];
   changeTypes: ChangeType[];
   catalogEntries: CatalogPattern[];
+  ecosystem?: "typescript" | "python";
 }
 
 const BLIND_SPOT_TEST_SCHEMA = `
@@ -26,7 +27,8 @@ const BLIND_SPOT_TEST_SCHEMA = `
 `.trim();
 
 export function buildLayer2Prompt(input: Layer2PromptInput): string {
-  const { blastRadius, contracts, changeTypes, catalogEntries } = input;
+  const { blastRadius, contracts, changeTypes, catalogEntries, ecosystem } =
+    input;
 
   const blastRadiusSection = JSON.stringify(blastRadius, null, 2);
   const contractsSection = JSON.stringify(contracts, null, 2);
@@ -64,5 +66,17 @@ ${catalogSection}
 6. Every testId must be unique. Use format "bs-001", "bs-002", etc.
 7. expectedStatus must be a number, not a string. Use 400 for validation failures, 403 for ownership/auth failures, 500 for crash scenarios.
 8. payload must be a non-null object (use {} if the caller sends no body).
-9. Output ONLY the JSON array — nothing else.`;
+9. Output ONLY the JSON array — nothing else.${
+    ecosystem === "python"
+      ? `
+
+## Ecosystem: Python
+Generate tests using Python idioms:
+- Use httpx.post() / httpx.get() instead of fetch()
+- Use assert resp.status_code == N instead of expect(res.status).toBe(N)
+- For non-HTTP code: use direct function calls and assert return values or pytest.raises()
+- endpoint field: use the function/method name if not an HTTP endpoint (e.g. "Pipeline.score")
+- payload field: use Python dict notation in descriptions ({"key": "value"})`
+      : ""
+  }`;
 }

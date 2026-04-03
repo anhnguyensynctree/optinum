@@ -22,6 +22,7 @@ export interface SynthesizeInput {
   contracts: EndpointContract[];
   changeTypes: ChangeType[];
   mode?: SynthesisMode;
+  ecosystem?: "typescript" | "python";
   /** Injectable for testing — overrides subprocess call in cli mode */
   _cliRunner?: (prompt: string) => string;
   /** Injectable for testing — overrides API call in api mode (attempt=1 uses Opus, attempt>1 uses Haiku) */
@@ -118,6 +119,7 @@ export async function synthesizeTests(
     contracts,
     changeTypes,
     mode = "cli",
+    ecosystem,
     _cliRunner = defaultCliRunner,
     _apiRunner = defaultApiRunner,
   } = input;
@@ -130,6 +132,7 @@ export async function synthesizeTests(
     contracts,
     changeTypes,
     catalogEntries,
+    ecosystem,
   });
 
   let layer1Tests: SynthesizedTest[];
@@ -161,6 +164,7 @@ export async function synthesizeTests(
     contracts,
     changeTypes,
     catalogEntries,
+    ecosystem,
   });
 
   let layer2Tests: SynthesizedTest[];

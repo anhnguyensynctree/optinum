@@ -10,6 +10,7 @@ export interface Layer1PromptInput {
   contracts: EndpointContract[];
   changeTypes: ChangeType[];
   catalogEntries: CatalogPattern[];
+  ecosystem?: "typescript" | "python";
 }
 
 const SYNTHESIZED_TEST_SCHEMA = `
@@ -26,7 +27,8 @@ const SYNTHESIZED_TEST_SCHEMA = `
 `.trim();
 
 export function buildLayer1Prompt(input: Layer1PromptInput): string {
-  const { blastRadius, contracts, changeTypes, catalogEntries } = input;
+  const { blastRadius, contracts, changeTypes, catalogEntries, ecosystem } =
+    input;
 
   const blastRadiusSection = JSON.stringify(blastRadius, null, 2);
   const contractsSection = JSON.stringify(contracts, null, 2);
@@ -63,5 +65,17 @@ ${catalogSection}
 5. Every testId must be unique. Use format "t-001", "t-002", etc.
 6. expectedStatus must be a number, not a string.
 7. payload must be a non-null object (use {} if no body).
-8. Output ONLY the JSON array — nothing else.`;
+8. Output ONLY the JSON array — nothing else.${
+    ecosystem === "python"
+      ? `
+
+## Ecosystem: Python
+Generate tests using Python idioms:
+- Use httpx.post() / httpx.get() instead of fetch()
+- Use assert resp.status_code == N instead of expect(res.status).toBe(N)
+- For non-HTTP code: use direct function calls and assert return values or pytest.raises()
+- endpoint field: use the function/method name if not an HTTP endpoint (e.g. "Pipeline.score")
+- payload field: use Python dict notation in descriptions ({"key": "value"})`
+      : ""
+  }`;
 }
