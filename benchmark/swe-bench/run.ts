@@ -9,9 +9,11 @@
  * the AI that wrote the fix left the test gap Optinum targets.
  */
 
-import { writeFileSync, readFileSync, existsSync } from "fs";
-import { join } from "path";
+import { writeFileSync, readFileSync, existsSync, mkdirSync, rmSync } from "fs";
+import { join, dirname } from "path";
+import { tmpdir } from "os";
 import { queryByChangeType } from "../../src/catalog/catalog";
+import { parseBlastRadius } from "../../src/ast/index";
 import type { ChangeType } from "../../src/types/pipeline";
 
 export type SynthesisMode = "catalog-classification" | "ast-classification";
@@ -42,6 +44,8 @@ export interface BenchmarkResult {
   problem_summary: string;
   synthesis_mode: SynthesisMode;
   synthesized_test_count?: number;
+  ast_derived_change_type?: string | null;
+  ast_match?: boolean | null;
 }
 
 export interface RunSummary {
@@ -216,11 +220,189 @@ export function filterInstances(instances: SWEInstance[]): SWEInstance[] {
   });
 }
 
+// ─── AST helpers ──────────────────────────────────────────────────────────────
+
+/**
+ * Parse a unified diff and return the list of changed file paths (b-side).
+ * Returns [] if the patch is a stub (starts with `# Stub patch`).
+ */
+function parsePatchFilePaths(patchContent: string): string[] {
+  if (patchContent.trimStart().startsWith("# Stub patch")) {
+    return [];
+  }
+  const paths: string[] = [];
+  for (const line of patchContent.split("\n")) {
+    // `+++ b/path/to/file.py`
+    if (line.startsWith("+++ b/")) {
+      paths.push(line.slice(6).trim());
+    }
+  }
+  return [...new Set(paths)];
+}
+
+/**
+ * Extract the `+` lines (added/modified code) for a given file path from a patch.
+ * Strips the leading `+` character.
+ */
+function extractAddedLines(patchContent: string, filePath: string): string[] {
+  const lines = patchContent.split("\n");
+  const added: string[] = [];
+  let inTargetFile = false;
+
+  for (const line of lines) {
+    if (line.startsWith("+++ b/")) {
+      inTargetFile = line.slice(6).trim() === filePath;
+      continue;
+    }
+    if (line.startsWith("--- ") || line.startsWith("diff --git")) {
+      // Don't toggle inTargetFile here — wait for +++ b/
+      continue;
+    }
+    if (inTargetFile && line.startsWith("+") && !line.startsWith("+++")) {
+      added.push(line.slice(1));
+    }
+  }
+  return added;
+}
+
+/**
+ * Derive a change_type heuristic from a patch without running the full Python AST.
+ * Priority: file path signals → def-line changes → file count.
+ */
+function deriveChangeTypeFromPatch(
+  patchContent: string,
+  filePaths: string[],
+): string {
+  // Schema migration: migration files present
+  if (filePaths.some((p) => /migrat/i.test(p))) {
+    return "schema-migration";
+  }
+
+  // Collect all `+` lines across changed files (non-test files)
+  const nonTestFiles = filePaths.filter((p) => !/test/i.test(p));
+  const allAddedLines: string[] = [];
+  for (const fp of nonTestFiles) {
+    allAddedLines.push(...extractAddedLines(patchContent, fp));
+  }
+
+  // Count `def ` lines changed — indicates function signature change
+  const defLinesChanged = allAddedLines.filter((l) =>
+    /^\s*def\s+\w+/.test(l),
+  ).length;
+
+  // Type-widening signal: return type annotation changed (-> None or -> Optional)
+  const returnTypeChanged = allAddedLines.some((l) =>
+    /\)\s*->\s*(None|Optional|Union|Any)/.test(l),
+  );
+
+  if (returnTypeChanged && nonTestFiles.length === 1) {
+    return "type-widening";
+  }
+
+  // Contract change: def lines modified in a single file
+  if (defLinesChanged > 0 && nonTestFiles.length === 1) {
+    return "contract-change";
+  }
+
+  // Cascade change: multiple files changed
+  if (nonTestFiles.length > 1) {
+    return "cascade-change";
+  }
+
+  // Default for single-file write changes
+  return "new-write-endpoint";
+}
+
+/**
+ * Run AST classification on a patch file.
+ * Returns { astDerivedChangeType, astMatch }.
+ * Falls back to null on stub patch or parseBlastRadius error.
+ */
+function classifyFromPatch(
+  inst: SWEInstance,
+  projectRoot: string,
+): { astDerivedChangeType: string | null; astMatch: boolean | null } {
+  const diffsDir = join(projectRoot, "benchmark", "swe-bench", "diffs");
+  const patchPath = join(diffsDir, `${inst.instance_id}.patch`);
+
+  if (!existsSync(patchPath)) {
+    return { astDerivedChangeType: null, astMatch: null };
+  }
+
+  const patchContent = readFileSync(patchPath, "utf-8");
+
+  // Stub patch → no AST data
+  if (patchContent.trimStart().startsWith("# Stub patch")) {
+    return { astDerivedChangeType: null, astMatch: null };
+  }
+
+  const filePaths = parsePatchFilePaths(patchContent);
+  if (filePaths.length === 0) {
+    return { astDerivedChangeType: null, astMatch: null };
+  }
+
+  // Try full AST via parseBlastRadius on a temp dir with reconstructed files.
+  // We write the `+` lines of each .py file to a temp location so parseBlastRadius
+  // can analyse function structure without needing the actual repo.
+  let astDerivedChangeType: string | null = null;
+  const pyFiles = filePaths.filter((p) => p.endsWith(".py"));
+
+  if (pyFiles.length > 0) {
+    const tempRoot = join(tmpdir(), `optinum-ast-${inst.instance_id}`);
+    try {
+      for (const fp of pyFiles) {
+        const addedLines = extractAddedLines(patchContent, fp);
+        if (addedLines.length === 0) continue;
+        const destPath = join(tempRoot, fp);
+        mkdirSync(dirname(destPath), { recursive: true });
+        writeFileSync(destPath, addedLines.join("\n"), "utf-8");
+      }
+
+      const absFilePaths = pyFiles.map((fp) => join(tempRoot, fp));
+      const existing = absFilePaths.filter((p) => existsSync(p));
+
+      if (existing.length > 0) {
+        const blastRadius = parseBlastRadius(existing, tempRoot);
+
+        // Infer type from blast radius structure
+        const hasMultipleChangedFunctions = blastRadius.changed.length > 1;
+        const hasDependents = blastRadius.dependents.length > 0;
+        const hasDependencies = blastRadius.dependencies.length > 0;
+
+        if (hasDependents && hasMultipleChangedFunctions) {
+          astDerivedChangeType = "cascade-change";
+        } else if (hasDependencies && blastRadius.changed.length === 1) {
+          astDerivedChangeType = "contract-change";
+        } else if (blastRadius.changed.length > 0) {
+          // Fall through to heuristic below for refinement
+        }
+      }
+    } catch {
+      // AST failed — fall through to heuristic
+    } finally {
+      try {
+        rmSync(tempRoot, { recursive: true, force: true });
+      } catch {
+        // ignore cleanup errors
+      }
+    }
+  }
+
+  // If AST didn't produce a result, use patch heuristic
+  if (astDerivedChangeType === null) {
+    astDerivedChangeType = deriveChangeTypeFromPatch(patchContent, filePaths);
+  }
+
+  const astMatch = astDerivedChangeType === inst.change_type;
+  return { astDerivedChangeType, astMatch };
+}
+
 // ─── classify ─────────────────────────────────────────────────────────────────
 
 function classifyInstance(
   inst: SWEInstance,
   synthesisMode: SynthesisMode = "catalog-classification",
+  projectRoot?: string,
 ): BenchmarkResult {
   const patterns = queryByChangeType(inst.change_type);
   const catalogPattern = patterns[0] ?? null;
@@ -250,12 +432,28 @@ function classifyInstance(
     ai_unit_test_would_miss: inst.ai_unit_test_would_miss,
     problem_summary: inst.problem_summary,
     synthesis_mode: synthesisMode,
+    ast_derived_change_type: null,
+    ast_match: null,
   };
 
-  if (synthesisMode === "ast-classification" && wouldGenerate) {
-    // AST-classification mode: record pattern count as synthesized_test_count proxy.
-    // Full LLM synthesis requires Docker (Milestone 3 exec work).
-    result.synthesized_test_count = patterns.length;
+  if (synthesisMode === "ast-classification") {
+    if (wouldGenerate) {
+      // Record pattern count as synthesized_test_count proxy.
+      result.synthesized_test_count = patterns.length;
+    }
+
+    if (projectRoot) {
+      const { astDerivedChangeType, astMatch } = classifyFromPatch(
+        inst,
+        projectRoot,
+      );
+      result.ast_derived_change_type = astDerivedChangeType;
+      result.ast_match = astMatch;
+    } else {
+      // No project root supplied — use catalog classification fallback
+      result.ast_derived_change_type = null;
+      result.ast_match = null;
+    }
   }
 
   return result;
@@ -286,9 +484,11 @@ function buildDescription(inst: SWEInstance, patternId: string): string {
  * Pass synthesis: true to enable ast-classification mode (records synthesized_test_count).
  */
 export async function runPilot(
-  opts: { quiet?: boolean; synthesis?: boolean } = {},
+  opts: { quiet?: boolean; synthesis?: boolean; projectRoot?: string } = {},
 ): Promise<RunSummary> {
   const { quiet = false, synthesis = false } = opts;
+  // Resolve project root: caller can override, otherwise derive from __dirname
+  const projectRoot = opts.projectRoot ?? join(__dirname, "..", "..");
   const synthesisMode: SynthesisMode = synthesis
     ? "ast-classification"
     : "catalog-classification";
@@ -301,7 +501,11 @@ export async function runPilot(
   }
 
   for (const inst of PILOT_INSTANCES) {
-    const result = classifyInstance(inst, synthesisMode);
+    const result = classifyInstance(
+      inst,
+      synthesisMode,
+      synthesis ? projectRoot : undefined,
+    );
     results.push(result);
 
     // Partial write after each instance (Script-partial-results: true)
