@@ -183,10 +183,7 @@ export async function runTestCommand(args: {
 
   // Run TypeScript pipeline
   if (hasTs) {
-    const blastRadius = parseBlastRadius({
-      projectRoot,
-      changedFiles: tsFiles,
-    });
+    const blastRadius = parseBlastRadius(tsFiles, projectRoot);
     const result = await synthesizeTests({
       blastRadius,
       contracts: [],
@@ -200,10 +197,7 @@ export async function runTestCommand(args: {
 
   // Run Python pipeline
   if (hasPy) {
-    const blastRadius = parseBlastRadius({
-      projectRoot,
-      changedFiles: pyFiles,
-    });
+    const blastRadius = parseBlastRadius(pyFiles, projectRoot);
     const result = await synthesizeTests({
       blastRadius,
       contracts: [],

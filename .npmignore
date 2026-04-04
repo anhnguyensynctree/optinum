@@ -1,0 +1,8 @@
+src/
+benchmark/
+.claude/
+fixtures/
+stryker.config.json
+**/*.test.ts
+**/*.test.js
+tsconfig.json

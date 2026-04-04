@@ -21,7 +21,7 @@ export function parsePythonBlastRadius(
       `python3 ${scriptPath} --root ${projectRoot} --files ${changedFiles.join(" ")}`,
       { encoding: "utf-8" },
     );
-    stdout = typeof result === "string" ? result : result.toString();
+    stdout = result;
   } catch (err: unknown) {
     const execErr = err as { stderr?: string; message?: string };
     if (execErr.stderr) {
