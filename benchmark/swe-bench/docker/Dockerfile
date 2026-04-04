@@ -1,13 +1,13 @@
-FROM python:3.11-slim
+FROM python:3.8-slim
 
 # Install system deps: git for checkout, build tools for packages with C extensions
 RUN apt-get update -qq && \
     apt-get install -y --no-install-recommends git build-essential && \
     rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip and install pytest
+# Upgrade pip and install pytest + build-time deps needed by scikit-learn / scipy
 RUN pip install --upgrade pip --quiet && \
-    pip install pytest --quiet
+    pip install pytest cython numpy httpx --quiet
 
 WORKDIR /workspace
 

@@ -696,35 +696,64 @@ export async function runFull(): Promise<void> {
 
 // ─── Test templates ──────────────────────────────────────────────────────────
 
+// Actual fix: scikit-learn__scikit-learn-14983 patches RepeatedKFold._build_repr()
+// Bug: repr(RepeatedStratifiedKFold()) raises AttributeError because _build_repr
+//      tries to read cvargs keys as direct attributes — they don't exist on the object.
+// Fix: _build_repr checks cvargs dict before falling back to getattr.
 const CASCADE_BLINDNESS_SKLEARN_TEST = `\
-import pytest
-try:
-    from sklearn.pipeline import Pipeline
-    from sklearn.preprocessing import StandardScaler
-    from sklearn.linear_model import LogisticRegression
-    import numpy as np
+from sklearn.model_selection import RepeatedStratifiedKFold, RepeatedKFold
 
-    def test_pipeline_score_passes_kwargs():
-        X = np.array([[1, 2], [3, 4], [5, 6]])
-        y = np.array([0, 1, 0])
-        pipe = Pipeline([('scaler', StandardScaler()), ('clf', LogisticRegression())])
-        pipe.fit(X, y)
-        # This should not raise TypeError — score should pass kwargs through
-        result = pipe.score(X, y, sample_weight=None)
-        assert result is not None
-except ImportError:
-    pytest.skip("sklearn not installed")
+def test_repeated_kfold_repr_does_not_raise():
+    rkf = RepeatedKFold(n_splits=5, n_repeats=3, random_state=42)
+    r = repr(rkf)
+    assert "RepeatedKFold" in r
+
+def test_repeated_stratified_kfold_repr_does_not_raise():
+    rskf = RepeatedStratifiedKFold(n_splits=5, n_repeats=3, random_state=42)
+    r = repr(rskf)
+    assert "RepeatedStratifiedKFold" in r
 `;
+
+// sympy__sympy-18199: nthroot_mod raised NotImplementedError for composite modulus
+// Bug: if not isprime(p): raise NotImplementedError("Not implemented for composite p")
+// Fix: route composite p through _nthroot_mod_composite() using CRT
+const CASCADE_BLINDNESS_SYMPY_TEST = `\
+from sympy.ntheory.residue_ntheory import nthroot_mod
+
+def test_nthroot_mod_cubic_composite():
+    # n=3 hits the composite check directly (n=2 shortcuts to sqrt_mod)
+    # Pre-fix: raises NotImplementedError("Not implemented for composite p")
+    # Post-fix: returns roots via _nthroot_mod_composite using CRT
+    roots = nthroot_mod(1, 3, 15, all_roots=True)
+    assert roots is not None, "nthroot_mod returned None for composite modulus"
+`;
+
+/** Returns the repo URL for a given instance. */
+function repoUrlForInstance(inst: SWEInstance): string {
+  return `https://github.com/${inst.repo}`;
+}
+
+/** Returns the HF dataset bug commit for well-known instances. */
+const KNOWN_BUG_COMMITS: Record<string, string> = {
+  "scikit-learn__scikit-learn-14983":
+    "06632c0d185128a53c57ccc73b25b6408e90bb89",
+  "sympy__sympy-18199": "ba80d1e493f21431b4bf729b3e0452cd47eb9566",
+};
+
+/** Returns the version pin for instances that require it (compiled packages). */
+const KNOWN_PKG_VERSIONS: Record<string, string> = {
+  // sklearn 0.22 — no ARM binary wheels; version pin attempted but may fall back
+  "scikit-learn__scikit-learn-14983": "0.22.2.post1",
+};
 
 /** Generate a structural test from catalog pattern — no LLM call. */
 function synthesizeTestFromPattern(inst: SWEInstance): string {
-  if (
-    inst.instance_id === "scikit-learn__scikit-learn-14983" &&
-    inst.change_type === "cascade-change"
-  ) {
+  if (inst.instance_id === "scikit-learn__scikit-learn-14983") {
     return CASCADE_BLINDNESS_SKLEARN_TEST;
   }
-  // Generic cascade-blindness template
+  if (inst.instance_id === "sympy__sympy-18199") {
+    return CASCADE_BLINDNESS_SYMPY_TEST;
+  }
   if (inst.change_type === "cascade-change") {
     return `import pytest\n\ndef test_cascade_placeholder():\n    pytest.skip("no template for ${inst.instance_id}")\n`;
   }
@@ -771,11 +800,20 @@ export async function runVerify(instanceId: string): Promise<void> {
   let testPassesOnFix = false;
   let errorMessage: string | null = null;
 
+  const bugCommit = KNOWN_BUG_COMMITS[instanceId];
+  if (!bugCommit) {
+    console.error(
+      `No bug commit known for ${instanceId}. Add to KNOWN_BUG_COMMITS.`,
+    );
+    process.exit(1);
+  }
+
   const sandboxResult = await runInSandbox(instanceId, testCode, {
-    repoUrl: "https://github.com/scikit-learn/scikit-learn",
-    bugCommit: "fd8a5c9a5ff7e1f8f81d66ac04d7b87a4ac0c24e",
+    repoUrl: repoUrlForInstance(inst),
+    bugCommit,
     fixCommit: "HEAD",
     patchFile: patchPath,
+    pkgVersion: KNOWN_PKG_VERSIONS[instanceId],
     timeoutMs: 300_000,
   });
 

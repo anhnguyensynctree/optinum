@@ -35,6 +35,7 @@ export interface SandboxOpts {
   bugCommit: string;
   fixCommit: string;
   patchFile?: string;
+  pkgVersion?: string;
   timeoutMs?: number;
 }
 
@@ -55,6 +56,7 @@ export async function runInSandbox(
     bugCommit,
     fixCommit,
     patchFile,
+    pkgVersion,
     timeoutMs = 300_000,
   } = opts;
 
@@ -90,6 +92,7 @@ export async function runInSandbox(
       testCode,
       patchFile,
       tmpDir,
+      pkgVersion,
     );
 
     const result = spawnSync("docker", dockerArgs, {
@@ -144,6 +147,7 @@ function buildDockerArgs(
   testCode: string,
   patchFile: string | undefined,
   tmpDir: string,
+  pkgVersion?: string,
 ): string[] {
   const args = [
     "run",
@@ -161,6 +165,10 @@ function buildDockerArgs(
     "-e",
     `PATCH_FILE=${patchFile ?? ""}`,
   ];
+
+  if (pkgVersion) {
+    args.push("-e", `PKG_VERSION=${pkgVersion}`);
+  }
 
   if (patchFile) {
     // Mount patch file read-only at the expected path
