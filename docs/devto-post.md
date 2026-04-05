@@ -1,3 +1,13 @@
+---
+title: "AI Writes Your Tests. Here's What It Systematically Misses."
+description: "We ran Optinum against 16 real bugs from SWE-bench Verified and found that 62.5% of AI-written tests missed the exact failure class the bug belonged to — not random gaps, but the same structural blind spots."
+tags:
+  - testing
+  - ai
+  - devtools
+  - javascript
+---
+
 # AI Writes Your Tests. Here's What It Systematically Misses.
 
 We ran a tool called Optinum against 16 real bugs from SWE-bench Verified — a dataset of production OSS issues with human-verified patches. In 62.5% of cases, the AI-written tests that accompanied each fix missed the exact failure class the bug belonged to.

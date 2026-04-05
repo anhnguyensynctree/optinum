@@ -1,7 +1,7 @@
 {
   "name": "optinum",
   "version": "1.0.0",
-  "description": "",
+  "description": "Detect AI coding agent blindspots in pull requests — pattern catalog for boundary changes in contracts, cascades, and migrations.",
   "main": "index.js",
   "bin": {
     "optinum": "./bin/optinum.js"

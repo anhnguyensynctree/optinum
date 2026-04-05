@@ -1,0 +1,43 @@
+diff --git a/src/api/users.ts b/src/api/users.ts
+index 1234567..abcdefg 100644
+--- a/src/api/users.ts
++++ b/src/api/users.ts
+@@ -1,19 +1,30 @@
+ import { Router } from "express";
+ import { db } from "../db";
++import type { User } from "../types";
+
+ const router = Router();
+
+-export async function getUser(userId: string) {
+-  const user = await db.users.findById(userId);
+-  return {
+-    id: user.id,
+-    email: user.email,
+-    name: user.name,
+-  };
++export async function getUser(userId: string): Promise<User> {
++  const user = await db.users.findById(userId);
++  if (!user) {
++    throw new Error("User not found");
++  }
++  return {
++    id: user.id,
++    email: user.email,
++    name: user.name,
++    role: user.role || "viewer",
++  };
+ }
+
+ router.delete("/users/:id", async (req, res) => {
+   const userId = req.params.id;
+   await db.users.delete(userId);
++
++  // Clear user sessions on delete
++  await db.sessions.deleteWhere({ userId });
++
++  // Clear user API keys
++  await db.apiKeys.deleteWhere({ userId });
++
+   res.json({ success: true });
+ });

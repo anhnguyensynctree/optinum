@@ -1,0 +1,7 @@
+Show HN: Optinum — finds the blind spots AI coding agents systematically miss in PR tests
+
+We ran Optinum against 16 real production bugs from SWE-bench Verified, a dataset of real OSS issues with human-verified patches. In 62.5% of cases, the AI-written tests that accompanied each fix completely missed the exact failure class the bug belonged to. Not occasional random misses — the same categories across Django, sympy, scikit-learn, requests, Sphinx, and LangChain. We mapped all 500 SWE-bench Verified instances to 22 patterns across 6 change types (cascade-blindness, contract-change, schema-migration, etc.), zero false positives. We also took one sympy instance, synthesized a test, and verified it end-to-end in a Docker sandbox: the test fails on the bug commit and passes on the fix commit.
+
+The problem isn't quality — it's structure. When an AI modifies a function, it writes tests covering exactly what it changed. What it has no structural reason to check is whether other callers, dependents, or sibling functions have also been affected by the change. The blast radius is invisible to it. A human reviewer would grep for all callers; the AI tests what it authored and nothing else.
+
+You can try Optinum today at https://github.com/AnhNguyenLewis/optinum or install it via npm install -g optinum and run optinum test --diff demo/cascade-blindness.diff against the bundled example to see what patterns it surfaces.
