@@ -232,15 +232,100 @@
 - **Model-hint:** qwen36
 
 ## FEATURE-045 — Final Blog: verified terminal output + structural rewrite
-- **Status:** draft
+- **Status:** done
+- **Notes:** docs/blog-final.md written — 397 lines, verified terminal output embedded, no repo refs, leads with execution proof
 - **Milestone:** Milestone 4 — Blog: Publication-Ready
 - **Department:** engineering, research
 - **Description:** Rewrite docs/blog-milestone4.md into docs/blog-final.md. Embed verified-from-execution terminal output for both pilot run and sympy verification. Restructure to lead with the execution proof. Remove all internal repo path references and paths that assume private repo access. Rewrite Getting Started to reflect actual current usage. Add a functional CTA. No internal file paths in footnotes. The deliverable is a single Markdown file ready to paste into any publisher.
 - **Constraints:** No references to the user's private repo or internal file paths. All terminal output must be verbatim from actual execution, not approximated. Getting Started must be accurate to the tool's current state.
 
 ## FEATURE-046 — Final Blog: OSS link audit + CTA + publish-ready polish
-- **Status:** draft
+- **Status:** done
+- **Notes:** OSS links audited, narrative tightened, Getting Started removed (tool not yet on npm), CTA added, blog-final.md is publish-ready
 - **Milestone:** Milestone 4 — Blog: Publication-Ready
 - **Department:** research
 - **Description:** Audit all OSS GitHub links in the blog to confirm they resolve. Tighten narrative: cut anything that reads as internal tooling documentation. Add a single clear CTA at the end (GitHub star / waitlist / contact). Final proofread pass. Produce the definitive docs/blog-final.md.
 - **Depends:** FEATURE-045
+
+## TASK-045 — npm compile + publish pipeline
+- **Status:** done
+- **Notes:** tsc → dist/; node dist/cli/index.js --help works; npm pack --dry-run clean; .npmignore created; all tests pass
+- **Feature:** FEATURE-047
+- **Milestone:** Milestone 5 — Public Distribution
+- **Department:** engineering
+- **Type:** impl
+- **Infra-critical:** true
+- **Spec:** The system SHALL compile TypeScript sources to `dist/` and configure package.json so that `npm install -g optinum` installs a working CLI that does not require `tsx` at runtime.
+- **Scenarios:** GIVEN a developer runs `npm install -g optinum` in a clean environment WHEN the install completes THEN `optinum --help` prints the usage text without error | GIVEN the package is built with `npm run build` WHEN `node dist/cli/index.js --help` is run THEN it prints the usage text | GIVEN `npm pack --dry-run` is run THEN the output includes bin/optinum.js and dist/ files but NOT src/, benchmark/, .claude/, fixtures/, stryker.config.json | GIVEN the `optinum` npm name is checked THEN either confirm it is available or switch package name to `@optinum/cli` before proceeding
+- **Artifacts:** package.json — updated: scripts.build="tsc", scripts.prepublishOnly="npm run build", bin field points to ./bin/optinum.js (unchanged) | bin/optinum.js — updated: replace `require("tsx/cjs"); require("../src/cli/index.ts")` with `require("../dist/cli/index.js")` | .npmignore — new file: excludes src/, benchmark/, test files, .claude/, fixtures/, stryker.config.json, .gitignore | tsconfig.json — verify outDir is dist/ and rootDir is src/ (already correct; no change needed if so)
+- **Produces:** dist/ — compiled CLI output; consumed by bin/optinum.js at runtime after install | .npmignore — consumed by npm pack; determines what ships in the tarball
+- **Verify:** ~/.claude/bin/ctx-exec "error" npm run build && node dist/cli/index.js --help | ~/.claude/bin/ctx-exec "packed files" npm pack --dry-run
+- **Context:** package.json, tsconfig.json, bin/optinum.js, src/cli/index.ts
+- **Activated:** backend-developer, qa-engineer
+- **Validation:** dev → qa → em
+- **Depends:** none
+- **File-count:** 3
+- **Model-hint:** sonnet
+
+## TASK-046 — Demo fixture + public README
+- **Status:** cto-stop
+- **Notes:** CTO-STOP: exception — Command '['/Users/Lewis/.claude/bin/llm-route.sh', 'qwen']' timed out after 600 seconds
+- **Feature:** FEATURE-048
+- **Milestone:** Milestone 5 — Public Distribution
+- **Department:** engineering
+- **Type:** impl
+- **Infra-critical:** false
+- **Spec:** The system SHALL provide a self-contained demo diff file and a rewritten public-facing README so that any developer can run `optinum test --diff demo/cascade-blindness.diff` immediately after install and see a gap report with at least one AI-native pattern flagged — no external repo, no Claude subscription required for this path.
+- **Scenarios:** GIVEN the demo diff exists at demo/cascade-blindness.diff WHEN `optinum test --diff demo/cascade-blindness.diff` is run THEN exit code is 0 and stdout contains at least one pattern name from the blind spot catalog | GIVEN a developer reads README.md WHEN they reach Getting Started THEN they see: install command, prerequisite note about Claude Code for synthesis, and the single demo command | GIVEN a developer has no Claude Code subscription WHEN they run the demo command THEN the blast radius + catalog pattern report is produced (synthesis step is skipped with a clear message, not a crash) | GIVEN npm README field is empty WHEN `npm view optinum` is run THEN the description field shows a meaningful one-line description
+- **Artifacts:** demo/cascade-blindness.diff — hand-crafted unified diff: one file changed with a route handler that adds a new field to a response without updating a second file that consumes that field (cascade-blindness pattern); must be valid unified diff format | README.md — rewritten: # Optinum heading, one-line description, Prerequisites section (Node 18+, Claude Code for synthesis), Install section (npm install -g optinum), Quick Start section (optinum test --diff demo/cascade-blindness.diff), What it catches section (link to blog)
+- **Produces:** demo/cascade-blindness.diff — consumed by TASK-045 acceptance and by README Quick Start | README.md — consumed by npm registry display and by TASK-047 blog update
+- **Verify:** ~/.claude/bin/ctx-exec "error pattern" npx tsx src/cli/index.ts test --diff demo/cascade-blindness.diff
+- **Context:** src/cli/commands/test.ts, src/catalog/catalog.ts, demo/ (create if absent), README.md
+- **Activated:** backend-developer, qa-engineer
+- **Validation:** dev → qa → em
+- **Depends:** TASK-045
+- **File-count:** 2
+- **Model-hint:** qwen
+- **Cost:** $0.0000
+- **Validators:** none
+- **First-pass:** yes
+
+## TASK-047 — Blog Getting Started section
+- **Status:** done
+- **Notes:** Getting Started section added at line 393; includes install, demo commands, expected output, and subscription note
+- **Feature:** FEATURE-049
+- **Milestone:** Milestone 5 — Public Distribution
+- **Department:** engineering
+- **Type:** impl
+- **Infra-critical:** false
+- **Spec:** The system SHALL add an accurate Getting Started section to docs/blog-final.md using the real install and demo commands validated in TASK-045 and TASK-046, so that readers of the published blog can immediately try the tool.
+- **Scenarios:** GIVEN the blog is read by a developer WHEN they reach Getting Started THEN they see: npm install -g optinum, optinum test --diff demo/cascade-blindness.diff, and a note that synthesis requires Claude Code subscription | GIVEN the commands in Getting Started are run verbatim WHEN executed in a clean environment THEN they produce output without error | GIVEN the blog is read end-to-end WHEN a developer finishes THEN the narrative flows: problem → proof → how it works → try it → CTA (no dead ends)
+- **Artifacts:** docs/blog-final.md — updated: insert Getting Started section after the "What's next" section and before the CTA; section contains install command, demo command, output example (verbatim from TASK-046 run), and subscription note
+- **Produces:** docs/blog-final.md — publish-ready final version; consumed by TASK-048 for HN/dev.to copy
+- **Verify:** grep -n "Getting Started" docs/blog-final.md | grep -v "^$"
+- **Context:** docs/blog-final.md, demo/cascade-blindness.diff, README.md
+- **Activated:** backend-developer
+- **Validation:** dev → em
+- **Depends:** TASK-046
+- **File-count:** 1
+- **Model-hint:** qwen-coder
+
+## TASK-048 — HN post + dev.to post drafts
+- **Status:** done
+- **Notes:** hn-post.md (7 lines, Show HN format, 3 paragraphs), devto-post.md (438 lines, YAML + full blog-final.md)
+- **Feature:** FEATURE-050
+- **Milestone:** Milestone 5 — Public Distribution
+- **Department:** engineering
+- **Type:** impl
+- **Infra-critical:** false
+- **Spec:** The system SHALL produce two publication-ready post drafts — one for Hacker News (plain text, Show HN format) and one for dev.to (full markdown using blog-final.md as source) — so the CEO can publish both without further editing.
+- **Scenarios:** GIVEN docs/hn-post.md is read WHEN the first line is checked THEN it starts with "Show HN: " followed by a factual claim (not a question, not hype) | GIVEN docs/hn-post.md is read WHEN the body is checked THEN it is plain text with no markdown headers, no bullet points, no links except the GitHub repo; max 3 paragraphs | GIVEN docs/devto-post.md is read WHEN the frontmatter is checked THEN it has title, description, tags fields and the body is the full blog-final.md content | GIVEN both posts reference the package name WHEN checked THEN the name matches the published package name from TASK-045 (optinum or @optinum/cli)
+- **Artifacts:** docs/hn-post.md — Show HN post: first line "Show HN: [factual title]", 3 paragraphs plain text (what it is, what it proved, where to find it), no markdown formatting | docs/devto-post.md — dev.to post: YAML frontmatter (title, description, tags: ["testing","ai","devtools","javascript"]), body = docs/blog-final.md content verbatim
+- **Produces:** docs/hn-post.md — ready to paste into news.ycombinator.com/submit | docs/devto-post.md — ready to paste into dev.to editor
+- **Verify:** head -1 docs/hn-post.md | grep "^Show HN:" && grep "^title:" docs/devto-post.md
+- **Context:** docs/blog-final.md, README.md, package.json (for package name)
+- **Activated:** backend-developer
+- **Validation:** dev → em
+- **Depends:** TASK-047
+- **File-count:** 2
+- **Model-hint:** qwen-coder

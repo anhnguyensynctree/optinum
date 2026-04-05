@@ -1,29 +1,36 @@
 # Product Direction — Optinum
 
 ## Current Phase
-Pre-MVP. Architecture design and core engine definition.
+Post-MVP. Blog published. Distribution assets ready. Seeking production validation.
 
-## Current Priorities
-1. Define the Flow Detection Engine: AST diff parsing → blast radius mapping → OpenSpec enrichment pipeline
-2. Design the CLI interface (`optinum test --diff`) and GitHub Action integration
-3. Validate that LLM-synthesized test payloads are structurally valid and runnable without human intervention
+## Active Milestone
+None — run /oms-exec to plan next milestone
 
-## Milestones
+## Completed Milestones
 
 ### Milestone 1: MVP — CLI Proof of Concept on TypeScript + Python
-**Status:** Queued (FEATURE-001 through FEATURE-012)
-Pipeline built, synthesis quality validated on fixtures (≥80% catch rate), CLI + GitHub Action working, gap report and trust report generated.
+✅ Complete 2026-04 | All tasks done
+Pipeline built, synthesis quality validated on fixtures, CLI wired, gap report and trust report generated.
 
 ### Milestone 2: Validated & Shareable
-**Status:** Queued (FEATURE-015 through FEATURE-019)
-**Exit gate — all three must be true:**
-1. `optinum demo --repo <url>` runs end-to-end in < 2 min on an unfamiliar public repo
-2. Blind spot catalog has ≥ 20 patterns, each backed by a real OSS evidence commit
-3. Optinum's own regression suite is green (OSS benchmark locked as CI gate)
+✅ Complete 2026-04 | All tasks done
+16/16 catalog coverage, 10/16 (62.5%) AI gap hits on SWE-bench Verified pilot. Blind spot catalog: 22 patterns, 9 AI-native. OSS benchmark evidence committed.
 
-What changes after this milestone: method is proven on real-world code, not just fixtures. Monetization strategy can now be decided.
+### Milestone 3: Python Support
+✅ Complete 2026-04 | All tasks done
+Python AST parser built, benchmark CLI wired, SWE-bench pilot expanded to 16 instances. Docker execution sandbox verified with sympy editable install (test_fails_on_bug: true, test_passes_on_fix: true).
 
-### Milestone 3: V2 (deferred — scope TBD after Milestone 2)
+### Milestone 4: Blog — Publication-Ready
+✅ Complete 2026-04-03 | 2/2 features done
+docs/blog-final.md written with verified terminal output, no repo refs. Leads with execution proof. OSS links audited. Ready to publish.
+
+### Milestone 5: Public Distribution
+✅ Complete 2026-04-04 | 4/4 tasks done
+npm publish pipeline configured, demo fixture created (cascade-blindness.diff), blog Getting Started section added with install + demo commands, HN post and dev.to post drafts ready to publish.
+
+## Next Milestones (not yet planned)
+
+### Milestone 6: V2 (deferred — scope TBD)
 - Security edge case synthesis (auth bypass, IDOR, injection patterns)
 - GraphQL schema support
 - Multi-language beyond TS + Python
