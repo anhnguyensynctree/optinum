@@ -16,6 +16,27 @@ AI coding agents write code that unit tests cannot catch. Unit tests verify logi
 
 60% of AI-written test suites on SWE-bench Verified miss the exact boundary condition Optinum would catch.
 
+## Evidence
+
+We ran Optinum against [SWE-bench Verified](https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified) — 500 real production bugs with human-verified patches across Django, sympy, scikit-learn, requests, Sphinx, and LangChain.
+
+| Metric | Result |
+|---|---|
+| Pilot instances (16) with AI gap | **62.5%** — AI-written tests missed the exact failure class |
+| Full 500-instance catalog coverage | **100%** — every instance maps to ≥1 catalog pattern |
+| Patterns catalogued | **22** across 6 change types |
+| End-to-end Docker proof | test fails on bug commit, passes on fix commit (sympy__sympy-18199) |
+
+```
+$ optinum benchmark --verify sympy__sympy-18199
+
+  test_fails_on_bug:   true
+  test_passes_on_fix:  true
+  execution_verified:  true
+```
+
+Full write-up: [docs/blog-final.md](docs/blog-final.md)
+
 ## Prerequisites
 
 - **Node 18+**
@@ -102,8 +123,9 @@ Add to your GitHub Actions workflow after unit tests:
 ```yaml
 - name: Check for AI blindspot patterns
   run: |
+    npm install -g github:anhnguyensynctree/optinum
     git diff origin/main...HEAD > changes.diff
-    npx optinum test --diff changes.diff
+    optinum test --diff changes.diff
 ```
 
 ## FAQ
@@ -122,3 +144,19 @@ Optinum analyzes the diff, not your codebase. It detects the *type* of change (e
 
 **What is the synthesizer independence principle?**
 If a synthesizer runs in the same context where code was written, it inherits the same mental model and misses the same blindspots. Optinum's synthesizer runs in a subprocess with only deterministic inputs: blast radius, contracts, and catalog entries. It never sees implementation details or PR descriptions.
+
+## Extend or Fork This
+
+Optinum is designed to be forked. The three components you would change most:
+
+**Catalog** — `src/catalog/blind-spot-catalog.json`
+Add your own patterns. Each entry needs: `id`, `name`, `changeType`, `description`, `testPattern`, `severity`. The `changeType` field is what the classifier matches against. Add a pattern, and every diff that matches its change type will surface it automatically.
+
+**AST Parser** — `src/ast/`
+`ts-parser.ts` handles TypeScript, `py-parser.ts` handles Python, `index.ts` routes by extension. Add a new parser for Go, Rust, or Ruby by implementing the same `DiffBlastRadius` output shape and registering it in the router.
+
+**Synthesizer Prompts** — `src/synthesizer/prompts/`
+`layer1.ts` generates standard tests, `layer2.ts` generates AI-blind-spot tests. Edit the prompt templates to target your framework conventions, change the test output format, or add a new synthesis layer.
+
+**The approach in three sentences:**
+Parse the diff → identify what changed and what depends on it (blast radius) → match against a catalog of patterns AI agents miss → synthesize tests that probe those boundaries from outside. The synthesizer never sees your implementation — only the boundary shape. This is what makes the tests catch what AI-authored tests miss.
