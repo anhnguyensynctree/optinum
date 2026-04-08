@@ -295,5 +295,208 @@
     "passed": true,
     "fail_at": null,
     "cost_usd": null
+  },
+  {
+    "task_id": "TASK-034",
+    "slug": "optinum",
+    "title": "SWE-bench Benchmark \u2014 Empirical Proof Run",
+    "date": "2026-04-02T01:40:41.287291Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
+  },
+  {
+    "task_id": "TASK-036",
+    "slug": "optinum",
+    "title": "Wire benchmark into CLI router",
+    "date": "2026-04-02T19:22:50.962516Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
+  },
+  {
+    "task_id": "TASK-035",
+    "slug": "optinum",
+    "title": "Python AST Parser",
+    "date": "2026-04-02T19:23:00.242325Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
+  },
+  {
+    "task_id": "TASK-037",
+    "slug": "optinum",
+    "title": "SWE-bench Synthesis Run \u2014 Post Python AST",
+    "date": "2026-04-02T19:26:43.306030Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
+  },
+  {
+    "task_id": "TASK-038",
+    "slug": "optinum",
+    "title": "Download SWE-bench patch files",
+    "date": "2026-04-03T00:40:47.215564Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
+  },
+  {
+    "task_id": "TASK-040",
+    "slug": "optinum",
+    "title": "Docker execution sandbox",
+    "date": "2026-04-03T00:43:04.524871Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
+  },
+  {
+    "task_id": "TASK-039",
+    "slug": "optinum",
+    "title": "AST-driven classification in benchmark",
+    "date": "2026-04-03T00:47:25.996882Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
+  },
+  {
+    "task_id": "TASK-041",
+    "slug": "optinum",
+    "title": "Full 206-instance SWE-bench run",
+    "date": "2026-04-03T00:51:12.594952Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
+  },
+  {
+    "task_id": "TASK-042",
+    "slug": "optinum",
+    "title": "Python-aware test command",
+    "date": "2026-04-03T03:09:23.437518Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
+  },
+  {
+    "task_id": "TASK-043",
+    "slug": "optinum",
+    "title": "Ecosystem-aware synthesis prompts",
+    "date": "2026-04-03T03:11:51.828220Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
+  },
+  {
+    "task_id": "TASK-044",
+    "slug": "optinum",
+    "title": "End-to-end Python verification via Docker sandbox",
+    "date": "2026-04-03T03:18:35.103632Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null
+  },
+  {
+    "task_id": "TASK-045",
+    "slug": "optinum",
+    "title": "npm compile + publish pipeline",
+    "date": "2026-04-04T07:07:06.102457Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null,
+    "validators": {
+      "dev": "PASS",
+      "qa": "PASS",
+      "em": "PASS"
+    },
+    "milestone": "Milestone 5 \u2014 Public Distribution",
+    "type": "impl",
+    "first_pass": null,
+    "notes": "tsc build fixed (excluded tests + benchmark from rootDir, fixed parseBlastRadius call signatures, stubbed benchmark command); bin updated to dist; .npmignore excludes src/benchmark/.claude/fixtures/stryker.config.json/test files"
+  },
+  {
+    "task_id": "TASK-045",
+    "slug": "optinum",
+    "title": "npm compile + publish pipeline",
+    "date": "2026-04-04T07:07:57.572486Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null,
+    "validators": {
+      "dev": "PASS",
+      "qa": "PASS",
+      "em": "PASS"
+    },
+    "milestone": "Milestone 5 \u2014 Public Distribution",
+    "type": "impl",
+    "first_pass": null,
+    "notes": "Fixed 3 type errors (py-parser never branch, parseBlastRadius call signature, benchmark import outside rootDir). Excluded test files and benchmark from tsconfig. Requires node 22+ due to TypeScript 6."
+  },
+  {
+    "task_id": "TASK-046",
+    "slug": "optinum",
+    "title": "Demo fixture + public README",
+    "date": "2026-04-04T07:17:48.048928Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null,
+    "validators": {
+      "dev": "PASS",
+      "qa": "PASS",
+      "em": "PASS"
+    },
+    "milestone": "Milestone 5 \u2014 Public Distribution",
+    "type": "impl",
+    "first_pass": null,
+    "notes": "demo/cascade-blindness.diff created with valid unified diff format, README rewritten with all required sections, package.json description updated"
+  },
+  {
+    "task_id": "TASK-046",
+    "slug": "m5-readme",
+    "title": "Demo fixture + public README",
+    "date": "2026-04-04T20:46:56.239110Z",
+    "passed": true,
+    "fail_at": null,
+    "cost_usd": null,
+    "validators": {
+      "dev": "PASS",
+      "qa": "PASS",
+      "em": "PASS"
+    },
+    "milestone": "Milestone 5 \u2014 Public Distribution",
+    "type": "impl",
+    "first_pass": null,
+    "notes": "demo/cascade-blindness.diff created; README rewritten for public audience; test command enhanced with pattern detection"
+  },
+  {
+    "task_id": "TASK-046",
+    "slug": "optinum",
+    "title": "Demo fixture + public README",
+    "date": "2026-04-04T22:55:52.363004+00:00Z",
+    "passed": false,
+    "fail_at": "exception",
+    "cost_usd": 0.0,
+    "validators": {},
+    "milestone": "Milestone 5 \u2014 Public Distribution",
+    "type": "impl",
+    "first_pass": true,
+    "notes": "CTO-STOP: exception \u2014 Command '['/Users/Lewis/.claude/bin/llm-route.sh', 'qwen']' timed out after 600 seconds"
+  },
+  {
+    "task_id": "TASK-046",
+    "slug": "optinum",
+    "title": "Demo fixture + public README",
+    "date": "2026-04-08T04:04:03.401833+00:00Z",
+    "passed": false,
+    "fail_at": "execution",
+    "cost_usd": 0.0,
+    "validators": {},
+    "milestone": "Milestone 5 \u2014 Public Distribution",
+    "type": "impl",
+    "first_pass": true,
+    "model_hint": "qwen-coder",
+    "model_used": "qwen",
+    "retry_count": 2,
+    "escalation_count": 1,
+    "notes": "CTO-STOP: failed after 4 attempts \u2014 Missing artifacts: expected artifact not found: demo/cascade-blindness.diff \u2014 hand-crafted unified diff: one file changed with a route handler that adds a new field to a response without updating a se"
   }
 ]

@@ -1,67 +1,44 @@
-# OMS Briefing — /oms all
+# OMS Briefing
+Workflow: all
+Date: 2026-04-03
+Project: optinum
 
-## Session
-Date: 2026-03-26
-Workflow: elaborate-all
-Features processed: 20
-Tasks generated: 31
-Log: .claude/logs/tasks/2026-03-26-elaborate-all-features.md
+## What Happened
+`/oms all` elaborated 4 FEATURE drafts (FEATURE-047 through FEATURE-050) for Milestone 5 — Public Distribution into 4 queued TASK blocks with full OpenSpec.
+
+- FEATURE-047 → TASK-045: npm compile + publish pipeline. Updates bin/optinum.js to require dist/ not src/, adds prepublishOnly build script, creates .npmignore. This is the dependency root — nothing else can ship until this task passes.
+- FEATURE-048 → TASK-046: Demo fixture + README rewrite. Hand-crafts demo/cascade-blindness.diff so `optinum test --diff demo/cascade-blindness.diff` works offline (blast radius only, no Claude needed). Rewrites README for public audience.
+- FEATURE-049 → TASK-047: Blog Getting Started section. Inserts accurate install/demo commands into docs/blog-final.md after TASK-046 validates them.
+- FEATURE-050 → TASK-048: HN post + dev.to post drafts. Produces docs/hn-post.md and docs/devto-post.md ready to paste.
 
 ## Queue State
-Total tasks: 31 queued
-No blocked tasks, no cto-stops.
+- Done: 12 features (M1–M4)
+- Queued: 4 (TASK-045 through TASK-048, all Milestone 5)
+- Blocked: 3 (TASK-046, TASK-047, TASK-048 depend on prior task completing)
+- CTO-Stop: 0
 
-Can start immediately (no deps): TASK-001, TASK-014, TASK-009
+## Milestone
+- Name: Milestone 5 — Public Distribution
+- Progress: 0/4 tasks started
+- Stage: in-progress (tasks queued, ready to execute)
 
-### Milestone 1 — MVP: CLI Proof of Concept on TypeScript + Python
-· TASK-001  engineering  Pipeline I/O Types  small  no-gate  depends: none
-· TASK-002  engineering  ASTParser TS  medium  no-gate  depends: TASK-001
-· TASK-003  engineering  ASTParser Python  medium  no-gate  depends: TASK-001
-· TASK-004  engineering  SchemaDetector TS  medium  no-gate  depends: TASK-001
-· TASK-005  engineering  SchemaDetector Python  medium  no-gate  depends: TASK-001
-· TASK-006  engineering  TestSynthesizer Core (Layer 1)  large  ceo-gate  depends: TASK-002,003,004,005
-· TASK-007  engineering  TestSynthesizer Self-Correction  small  no-gate  depends: TASK-006
-· TASK-008  engineering,qa  TestSynthesizer Layer 2  medium  no-gate  depends: TASK-006,015
-· TASK-009  engineering,qa  Fixture Validation Harness  small  no-gate  depends: TASK-001
-· TASK-010  engineering,qa  Synthesis Quality Gate  medium  ceo-gate  depends: TASK-008,009
-· TASK-011  engineering  CLI optinum test  medium  no-gate  depends: TASK-010
-· TASK-012  engineering  CLI Formatter  small  no-gate  depends: TASK-011
-· TASK-013  engineering  GitHub Action  small  no-gate  depends: TASK-011
-· TASK-014  engineering,qa  Blind Spot Catalog JSON  medium  no-gate  depends: TASK-001
-· TASK-015  engineering  ChangeClassifier  medium  no-gate  depends: TASK-002,003
-· TASK-016  engineering,qa  OSS Benchmark Runner  large  ceo-gate  depends: TASK-002,015
-· TASK-017  engineering,qa  OSS Cross-Reference Engine  medium  no-gate  depends: TASK-016
-· TASK-018  engineering,qa  Trust Report Generator  medium  no-gate  depends: TASK-015,019
-· TASK-019  engineering,qa  Gap Analyzer  medium  no-gate  depends: TASK-002,015
-· TASK-020  engineering  Trial Run Counter  small  no-gate  depends: TASK-011
+## Product Direction
+Milestone 5 closes the distribution gap: the blog and CLI exist but users can't install or try anything. After these 4 tasks, Optinum is installable, the blog has working Getting Started, and two distribution posts are ready.
 
-### Milestone 2 — Validated & Shareable
-· TASK-021  engineering  optinum init  medium  no-gate  depends: TASK-011
-· TASK-022  engineering,qa  Catalog Expansion Tooling  medium  no-gate  depends: TASK-014,016
-· TASK-023  engineering,qa  OSS Evidence Collection  medium  no-gate  depends: TASK-016,017
-· TASK-024  engineering  catalog add command  small  no-gate  depends: TASK-014
-· TASK-025  engineering,qa  Catalog Approval Flow  small  no-gate  depends: TASK-024
-· TASK-026  engineering,qa  Regression Suite CI  medium  ceo-gate  depends: TASK-016,023
-· TASK-027  engineering  Developer README  small  no-gate  depends: TASK-021,023
-· TASK-028  engineering,qa  Three-Loop Inner  medium  no-gate  depends: TASK-009,026
-· TASK-029  engineering,qa  Three-Loop Middle (Stryker)  large  ceo-gate  depends: TASK-028
-· TASK-030  engineering,qa  Three-Loop Outer (MR)  medium  no-gate  depends: TASK-008
+## Decisions Made
+- Linear dependency chain (045 → 046 → 047 → 048) — each task validates the previous before adding to it. Trade-off: no parallelism, but each step verifies the install works before writing instructions about it.
+- npm name check is TASK-045's first step — if `optinum` is taken, all subsequent tasks must use `@optinum/cli`. This is surfaced as a Spec scenario, not a separate task.
+- Blast radius demo works without Claude subscription — the demo fixture produces a catalog report using local AST + catalog only. Synthesis (claude --print) is documented as optional. Trade-off: the demo doesn't show the moat (Layer 2 synthesis), but it runs for everyone.
 
-### Milestone 1 (cont.)
-· TASK-031  engineering,qa  Fixture Completeness Check  small  no-gate  depends: TASK-009
+## Risks & Unresolved
+- tsx is a devDependency but currently required at runtime by bin/optinum.js. TASK-045 must update bin/optinum.js to require dist/cli/index.js (the compiled output) or the install will crash. This is the highest-risk change in the milestone.
+- npm name `optinum` not yet verified. If taken, TASK-045 must rename before other tasks proceed.
+- @anthropic-ai/sdk is in dependencies (not devDependencies) — it ships with the npm package. This is a pre-existing state; TASK-045 should not change it, but it adds ~1MB to the install weight.
 
-## CEO Gate Tasks
-Tasks requiring review before execution:
-- TASK-006: TestSynthesizer Core — first LLM API integration, large task
-- TASK-010: Synthesis Quality Gate — gates entire CLI milestone on 80% catch rate
-- TASK-016: OSS Benchmark Runner — external repo access, large task
-- TASK-026: Regression Suite CI — gates merges on Optinum's own repo
-- TASK-029: Middle Loop (Stryker) — weekly scheduled workflow, adversarial loop
+## Task Quality
+- Passed: 4/4 features elaborated cleanly, schema validator clean
+- Failed: none
+- CTO-Stop: none
 
-## Risks
-- TASK-006 is large (LLM integration) — may need splitting if synthesis prompt complexity exceeds 1 task scope
-- TASK-016 depends on GitHub API access — ensure GITHUB_TOKEN is available in CI
-- Catch rate gate (TASK-010) at 80% may block CLI work if synthesis quality is not there — plan for prompt iteration
-
-## Next Action
-Run /oms-work to begin execution starting from TASK-001.
+## Session Cost
+Not available (Agent tool path)

@@ -12,10 +12,9 @@
     "generated_test_description": "Verify caller handles None/null return from astropy/units/decorators.py",
     "ai_unit_test_would_miss": false,
     "problem_summary": "units.quantity_input decorator fails for constructors with type hinted return value -> None",
-    "synthesis_mode": "ast-classification",
-    "ast_derived_change_type": "new-write-endpoint",
-    "ast_match": false,
-    "synthesized_test_count": 3
+    "synthesis_mode": "catalog-classification",
+    "ast_derived_change_type": null,
+    "ast_match": null
   },
   {
     "instance_id": "django__django-10973",
@@ -30,10 +29,9 @@
     "generated_test_description": "Verify operation is atomic with proper auth/transaction guards",
     "ai_unit_test_would_miss": false,
     "problem_summary": "Use subprocess.run and PGPASSWORD for client in postgres backend",
-    "synthesis_mode": "ast-classification",
-    "ast_derived_change_type": "new-write-endpoint",
-    "ast_match": true,
-    "synthesized_test_count": 5
+    "synthesis_mode": "catalog-classification",
+    "ast_derived_change_type": null,
+    "ast_match": null
   },
   {
     "instance_id": "django__django-11066",
@@ -48,10 +46,9 @@
     "generated_test_description": "Verify caller sends correct field shape after change in django/contrib/contenttypes/management/__init__.py",
     "ai_unit_test_would_miss": true,
     "problem_summary": "RenameContentType._rename() doesn't save the content type on the correct database",
-    "synthesis_mode": "ast-classification",
-    "ast_derived_change_type": "new-write-endpoint",
-    "ast_match": false,
-    "synthesized_test_count": 7
+    "synthesis_mode": "catalog-classification",
+    "ast_derived_change_type": null,
+    "ast_match": null
   },
   {
     "instance_id": "django__django-13964",
@@ -66,10 +63,9 @@
     "generated_test_description": "Verify cascade operation completes for all related entities in django/db/models/base.py",
     "ai_unit_test_would_miss": false,
     "problem_summary": "Saving parent object after setting on child leads to data loss for parents with non-numeric primary key",
-    "synthesis_mode": "ast-classification",
-    "ast_derived_change_type": "new-write-endpoint",
-    "ast_match": false,
-    "synthesized_test_count": 6
+    "synthesis_mode": "catalog-classification",
+    "ast_derived_change_type": null,
+    "ast_match": null
   },
   {
     "instance_id": "django__django-14034",
@@ -84,10 +80,9 @@
     "generated_test_description": "Verify caller sends correct field shape after change in django/forms/boundfield.py",
     "ai_unit_test_would_miss": false,
     "problem_summary": "MultiValueField ignores a required value of a sub field",
-    "synthesis_mode": "ast-classification",
-    "ast_derived_change_type": "new-write-endpoint",
-    "ast_match": false,
-    "synthesized_test_count": 7
+    "synthesis_mode": "catalog-classification",
+    "ast_derived_change_type": null,
+    "ast_match": null
   },
   {
     "instance_id": "django__django-15695",
@@ -102,10 +97,9 @@
     "generated_test_description": "Verify cascade operation completes for all related entities in django/db/migrations/operations/models.py",
     "ai_unit_test_would_miss": true,
     "problem_summary": "RenameIndex() crashes when unnamed index is moving backward and forward",
-    "synthesis_mode": "ast-classification",
-    "ast_derived_change_type": "schema-migration",
-    "ast_match": false,
-    "synthesized_test_count": 6
+    "synthesis_mode": "catalog-classification",
+    "ast_derived_change_type": null,
+    "ast_match": null
   },
   {
     "instance_id": "django__django-7530",
@@ -120,10 +114,9 @@
     "generated_test_description": "Verify migration file exists for schema change in django/core/management/commands/makemigrations.py",
     "ai_unit_test_would_miss": false,
     "problem_summary": "makemigrations router.allow_migrate() calls for consistency checks use incorrect (app_label, model) pairs",
-    "synthesis_mode": "ast-classification",
-    "ast_derived_change_type": "schema-migration",
-    "ast_match": true,
-    "synthesized_test_count": 1
+    "synthesis_mode": "catalog-classification",
+    "ast_derived_change_type": null,
+    "ast_match": null
   },
   {
     "instance_id": "psf__requests-1724",
@@ -138,10 +131,9 @@
     "generated_test_description": "Verify caller sends correct field shape after change in requests/sessions.py",
     "ai_unit_test_would_miss": true,
     "problem_summary": "Unicode method names cause UnicodeDecodeError for some requests in Python 2.7.2",
-    "synthesis_mode": "ast-classification",
-    "ast_derived_change_type": "new-write-endpoint",
-    "ast_match": false,
-    "synthesized_test_count": 7
+    "synthesis_mode": "catalog-classification",
+    "ast_derived_change_type": null,
+    "ast_match": null
   },
   {
     "instance_id": "sphinx-doc__sphinx-8265",
@@ -156,10 +148,9 @@
     "generated_test_description": "Verify caller handles None/null return from sphinx/pycode/ast.py",
     "ai_unit_test_would_miss": true,
     "problem_summary": "docstring default arg is broken in html",
-    "synthesis_mode": "ast-classification",
-    "ast_derived_change_type": "contract-change",
-    "ast_match": false,
-    "synthesized_test_count": 3
+    "synthesis_mode": "catalog-classification",
+    "ast_derived_change_type": null,
+    "ast_match": null
   },
   {
     "instance_id": "sympy__sympy-18199",
@@ -174,10 +165,9 @@
     "generated_test_description": "Verify cascade operation completes for all related entities in sympy/ntheory/residue_ntheory.py",
     "ai_unit_test_would_miss": false,
     "problem_summary": "nthroot_mod function misses one root of x = 0 mod p",
-    "synthesis_mode": "ast-classification",
-    "ast_derived_change_type": "contract-change",
-    "ast_match": false,
-    "synthesized_test_count": 6,
+    "synthesis_mode": "catalog-classification",
+    "ast_derived_change_type": null,
+    "ast_match": null,
     "execution_verified": true
   },
   {
@@ -193,11 +183,9 @@
     "generated_test_description": "Verify cascade operation completes for all related entities in sklearn/pipeline.py",
     "ai_unit_test_would_miss": true,
     "problem_summary": "Pipeline.predict changed to pass kwargs but .score and .fit_predict not updated — cascade miss across sibling methods",
-    "synthesis_mode": "ast-classification",
-    "ast_derived_change_type": "contract-change",
-    "ast_match": false,
-    "synthesized_test_count": 6,
-    "execution_verified": false
+    "synthesis_mode": "catalog-classification",
+    "ast_derived_change_type": null,
+    "ast_match": null
   },
   {
     "instance_id": "matplotlib__matplotlib-23413",
@@ -212,10 +200,9 @@
     "generated_test_description": "Verify caller handles None/null return from lib/matplotlib/axes/_axes.py",
     "ai_unit_test_would_miss": true,
     "problem_summary": "axes.bar() return type widened to accept None for bottom parameter — callers that always unpacked return now fail",
-    "synthesis_mode": "ast-classification",
+    "synthesis_mode": "catalog-classification",
     "ast_derived_change_type": null,
-    "ast_match": null,
-    "synthesized_test_count": 3
+    "ast_match": null
   },
   {
     "instance_id": "django__django-12589",
@@ -230,10 +217,9 @@
     "generated_test_description": "Verify caller sends correct field shape after change in django/db/models/query.py",
     "ai_unit_test_would_miss": true,
     "problem_summary": "QuerySet.filter() positional args removed — keyword-only after refactor; callers with positional args break silently",
-    "synthesis_mode": "ast-classification",
+    "synthesis_mode": "catalog-classification",
     "ast_derived_change_type": null,
-    "ast_match": null,
-    "synthesized_test_count": 7
+    "ast_match": null
   },
   {
     "instance_id": "django__django-14855",
@@ -248,10 +234,9 @@
     "generated_test_description": "Verify cascade operation completes for all related entities in django/db/models/fields/related_managers.py",
     "ai_unit_test_would_miss": true,
     "problem_summary": "prefetch_related cache invalidation fix affects M2M add/remove — sibling methods not updated with same guard",
-    "synthesis_mode": "ast-classification",
-    "ast_derived_change_type": "new-write-endpoint",
-    "ast_match": false,
-    "synthesized_test_count": 6
+    "synthesis_mode": "catalog-classification",
+    "ast_derived_change_type": null,
+    "ast_match": null
   },
   {
     "instance_id": "sphinx-doc__sphinx-9367",
@@ -266,10 +251,9 @@
     "generated_test_description": "Verify caller sends correct field shape after change in sphinx/config.py",
     "ai_unit_test_would_miss": true,
     "problem_summary": "Config.init_values() signature changed — extensions relying on positional arg order break at runtime",
-    "synthesis_mode": "ast-classification",
-    "ast_derived_change_type": "new-write-endpoint",
-    "ast_match": false,
-    "synthesized_test_count": 7
+    "synthesis_mode": "catalog-classification",
+    "ast_derived_change_type": null,
+    "ast_match": null
   },
   {
     "instance_id": "langchain-ai__langchain-35871",
@@ -284,9 +268,8 @@
     "generated_test_description": "Verify cascade operation completes for all related entities in libs/core/langchain_core/callbacks/manager.py",
     "ai_unit_test_would_miss": true,
     "problem_summary": "dispatch builds {\"path\": path} but both _handle_rename implementations read args[\"old_path\"] — KeyError on every rename. Two classes, same flaw, written in separate AI sessions.",
-    "synthesis_mode": "ast-classification",
+    "synthesis_mode": "catalog-classification",
     "ast_derived_change_type": null,
-    "ast_match": null,
-    "synthesized_test_count": 6
+    "ast_match": null
   }
 ]

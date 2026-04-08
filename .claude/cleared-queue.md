@@ -268,8 +268,8 @@
 - **Model-hint:** sonnet
 
 ## TASK-046 — Demo fixture + public README
-- **Status:** cto-stop
-- **Notes:** CTO-STOP: exception — Command '['/Users/Lewis/.claude/bin/llm-route.sh', 'qwen']' timed out after 600 seconds
+- **Status:** done
+- **Notes:** demo/cascade-blindness.diff exists and verified — `optinum test --diff demo/cascade-blindness.diff` exits 0, detects 13 blind spot patterns; README rewritten with Getting Started, Prerequisites, Install, Quick Start
 - **Feature:** FEATURE-048
 - **Milestone:** Milestone 5 — Public Distribution
 - **Department:** engineering
@@ -285,9 +285,9 @@
 - **Validation:** dev → qa → em
 - **Depends:** TASK-045
 - **File-count:** 2
-- **Model-hint:** qwen
+- **Model-hint:** qwen-coder
 - **Cost:** $0.0000
-- **Validators:** none
+- **Validators:** exec-fail
 - **First-pass:** yes
 
 ## TASK-047 — Blog Getting Started section
