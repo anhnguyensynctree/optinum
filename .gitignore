@@ -2,3 +2,5 @@ src/ast/__pycache__/
 src/schema/__pycache__/
 node_modules/
 dist/
+optinum-tests/
+.claude/oms-costs.json
