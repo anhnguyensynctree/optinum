@@ -37,6 +37,21 @@ $ optinum benchmark --verify sympy__sympy-18199
 
 Full write-up: [docs/blog-final.md](docs/blog-final.md)
 
+## Real Examples from Production OSS
+
+These are real bugs from SWE-bench Verified — production issues in projects used by millions of developers. In each case the AI-generated fix shipped with tests that passed, but the test suite missed the exact failure class.
+
+**scikit-learn — cascade-blindness** ([scikit-learn#14983](https://github.com/scikit-learn/scikit-learn/issues/14983))
+`Pipeline.predict` was updated to pass `**kwargs` through to the estimator. `.score` and `.fit_predict` — sibling methods with the same interface — were not updated. AI wrote tests for `predict`. The other two methods silently broke. Optinum detects cascade-blindness: when one method in a group changes, it probes all siblings.
+
+**Django — renamed API parameters** ([django#11066](https://github.com/django/django/issues/11066))
+`RenameContentType._rename()` was refactored but didn't save to the correct database when using multi-db routing. AI tests called the method and checked the result — but against the default database, not the routed one. Optinum detects renamed/rerouted parameters and generates tests that probe the routing boundary.
+
+**matplotlib — type widening** ([matplotlib#23413](https://github.com/matplotlib/matplotlib/issues/23413))
+`axes.bar()` changed the `bottom` parameter to also accept `None`. Callers that always unpacked the return value broke when `None` propagated through. AI tests covered the happy path. Optinum generates edge-case tests specifically for widened return types: `None`, empty collections, boundary values.
+
+---
+
 ## Prerequisites
 
 - **Node 18+**
