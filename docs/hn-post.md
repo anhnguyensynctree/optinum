@@ -4,4 +4,4 @@ We ran Optinum against 16 real production bugs from SWE-bench Verified, a datase
 
 The problem isn't quality — it's structure. When an AI modifies a function, it writes tests covering exactly what it changed. What it has no structural reason to check is whether other callers, dependents, or sibling functions have also been affected by the change. The blast radius is invisible to it. A human reviewer would grep for all callers; the AI tests what it authored and nothing else.
 
-You can try Optinum today at https://github.com/AnhNguyenLewis/optinum or install it via npm install -g optinum and run optinum test --diff demo/cascade-blindness.diff against the bundled example to see what patterns it surfaces.
+You can try Optinum today at https://github.com/anhnguyensynctree/optinum or install it via npm install -g github:anhnguyensynctree/optinum and run optinum test --diff demo/cascade-blindness.diff against the bundled example to see what patterns it surfaces.

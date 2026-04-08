@@ -24,7 +24,7 @@ AI coding agents write code that unit tests cannot catch. Unit tests verify logi
 ## Install
 
 ```bash
-npm install -g optinum
+npm install -g github:anhnguyensynctree/optinum
 ```
 
 ## Quick Start

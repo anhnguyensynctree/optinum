@@ -405,7 +405,7 @@ If you're shipping AI-generated code and you haven't asked what its test suites 
 Install Optinum globally:
 
 ```bash
-npm install -g optinum
+npm install -g github:anhnguyensynctree/optinum
 ```
 
 Run pattern detection on the cascade-blindness example from the blog:
