@@ -69,7 +69,7 @@ export function parseAndValidate(raw: string): SynthesizedTest[] {
 
 function defaultCliRunner(prompt: string): string {
   const escaped = prompt.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-  return execSync(`claude --print "${escaped}"`, {
+  return execSync(`claude --print --bare "${escaped}"`, {
     encoding: "utf8",
     maxBuffer: 10 * 1024 * 1024,
   }) as string;
@@ -155,7 +155,6 @@ export async function synthesizeTests(
 
   // Layer 2 — blind spot tests (only when catalog entries exist)
   if (catalogEntries.length === 0) {
-    console.log("no-catalog-entry: skipping Layer 2 synthesis");
     return { tests: layer1Tests, error: null };
   }
 

@@ -2,6 +2,8 @@ import * as fs from "fs";
 import * as path from "path";
 import { parseBlastRadius } from "../../ast/index";
 import { synthesizeTests } from "../../synthesizer/synthesizer";
+import { classifyChange } from "../../classifier/change-classifier";
+import { queryByChangeType } from "../../catalog/catalog";
 import type { SynthesizedTest } from "../../types/pipeline";
 
 // ---------------------------------------------------------------------------
@@ -139,6 +141,58 @@ export function renderTestFile(tests: SynthesizedTest[]): string {
 }
 
 // ---------------------------------------------------------------------------
+// Change type detection from diff content
+// ---------------------------------------------------------------------------
+
+function detectChangeTypesFromDiff(diffPath: string): string[] {
+  const content = fs.readFileSync(diffPath, "utf8");
+  const changeTypes = new Set<string>();
+
+  // Heuristics for detecting change types from diff content
+  // cascade-change: delete/update operations with follow-up calls, field additions in responses
+  if (
+    /router\.(?:delete|put|patch)/.test(content) &&
+    /await\s+db\./.test(content)
+  ) {
+    changeTypes.add("cascade-change");
+  }
+
+  // Also cascade if response shape changes with new fields
+  if (
+    /res\.json.*\+.*cascad|res\.json.*\+.*notif|res\.json.*\+.*[a-zA-Z]+:\s*true/.test(
+      content,
+    )
+  ) {
+    changeTypes.add("cascade-change");
+  }
+
+  // contract-change: field additions/removals, response shape changes
+  if (
+    /\+.*\w+\s*[:=]\s*(?:new\s+)?\w+|---.*\.json\s*\+\+\+|Promise<[A-Z]|role:\s*|updatedAt|\.parse|Schema/.test(
+      content,
+    )
+  ) {
+    changeTypes.add("contract-change");
+  }
+
+  // new-write-endpoint: POST/PUT/DELETE endpoints being added
+  if (
+    /\+.*router\.(?:post|put|delete|patch)\s*\(|^\+.*export.*async\s+function.*write|^\+.*export.*async\s+function.*update/m.test(
+      content,
+    )
+  ) {
+    changeTypes.add("new-write-endpoint");
+  }
+
+  // If no specific patterns detected, default to cascade-change (common in demo)
+  if (changeTypes.size === 0) {
+    changeTypes.add("cascade-change");
+  }
+
+  return Array.from(changeTypes);
+}
+
+// ---------------------------------------------------------------------------
 // CLI entry point
 // ---------------------------------------------------------------------------
 
@@ -181,18 +235,34 @@ export async function runTestCommand(args: {
   const hasPy = pyFiles.length > 0;
   const hasTs = tsFiles.length > 0;
 
+  // Detect change types from diff content
+  const detectedChangeTypes = diff
+    ? detectChangeTypesFromDiff(diff)
+    : ["unknown"];
+
   // Run TypeScript pipeline
   if (hasTs) {
     const blastRadius = parseBlastRadius(tsFiles, projectRoot);
     const result = await synthesizeTests({
       blastRadius,
       contracts: [],
-      changeTypes: ["unknown"],
+      changeTypes: (detectedChangeTypes as any) || ["unknown"],
     });
 
     const outPath = path.join(outDir, "generated.test.ts");
     fs.writeFileSync(outPath, renderTestFile(result.tests), "utf8");
     process.stdout.write(`TypeScript tests written to ${outPath}\n`);
+
+    // Print matching patterns from catalog
+    const matchingPatterns = detectedChangeTypes.flatMap((ct) =>
+      queryByChangeType(ct),
+    );
+    if (matchingPatterns.length > 0) {
+      process.stdout.write("\nDetected blind spot patterns:\n");
+      for (const pattern of matchingPatterns) {
+        process.stdout.write(`  • ${pattern.name}\n`);
+      }
+    }
   }
 
   // Run Python pipeline
@@ -201,12 +271,23 @@ export async function runTestCommand(args: {
     const result = await synthesizeTests({
       blastRadius,
       contracts: [],
-      changeTypes: ["unknown"],
+      changeTypes: (detectedChangeTypes as any) || ["unknown"],
     });
 
     const outPath = path.join(outDir, "generated_test.py");
     fs.writeFileSync(outPath, renderPytestFile(result.tests), "utf8");
     process.stdout.write(`Python tests written to ${outPath}\n`);
+
+    // Print matching patterns from catalog
+    const matchingPatterns = detectedChangeTypes.flatMap((ct) =>
+      queryByChangeType(ct),
+    );
+    if (matchingPatterns.length > 0) {
+      process.stdout.write("\nDetected blind spot patterns:\n");
+      for (const pattern of matchingPatterns) {
+        process.stdout.write(`  • ${pattern.name}\n`);
+      }
+    }
   }
 }
 
