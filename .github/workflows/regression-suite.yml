@@ -5,8 +5,14 @@ on:
     branches:
       - master
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # never cancel an in-flight production deploy; only supersede branch runs
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   regression-suite:
+    timeout-minutes: 20
     name: Run full regression suite
     runs-on: ubuntu-latest
 

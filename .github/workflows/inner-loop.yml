@@ -5,8 +5,14 @@ on:
     branches:
       - master
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # never cancel an in-flight production deploy; only supersede branch runs
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   inner-loop:
+    timeout-minutes: 20
     name: Run inner loop validation
     runs-on: ubuntu-latest
 
