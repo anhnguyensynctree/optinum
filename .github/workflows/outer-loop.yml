@@ -10,8 +10,14 @@ on:
       - "src/catalog/**"
       - "src/synthesizer/prompts/**"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # never cancel an in-flight production deploy; only supersede branch runs
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   metamorphic-relations:
+    timeout-minutes: 20
     name: Run MR tests
     runs-on: ubuntu-latest
 

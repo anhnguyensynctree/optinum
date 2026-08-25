@@ -5,8 +5,14 @@ on:
     - cron: "0 2 * * 0"
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # never cancel an in-flight production deploy; only supersede branch runs
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   middle-loop:
+    timeout-minutes: 20
     name: Run StrykerJS adversarial mutation testing
     runs-on: ubuntu-latest
 
